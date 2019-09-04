@@ -59,5 +59,5 @@ class JR1Report:
         datarow.append(row_num)
         for row in self._worksheet.iter_cols(min_row=row_num, min_col=1, max_row=row_num, max_col=22):
             for cell in row:
-                datarow.append(cell.value)
+                datarow.append(unicode(cell.value).replace('"', ''))
         return datarow

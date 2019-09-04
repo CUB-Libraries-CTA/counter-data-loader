@@ -1,16 +1,20 @@
 from dataloader.jr1report import JR1Report
-from dataloader.counterdb import Platform, Publisher
+from dataloader.counterdb import Platform, Publisher, Publication
 import sys, glob, os
 
-platform = Platform()
-publisher = Publisher()
-
 def load_platform(jr1report):
+    platform = Platform()
     platform.insert(jr1report.platform)
 
 def load_publisher(jr1report):
+    publisher = Publisher()
     for n in jr1report.data_range():
         publisher.insert(jr1report.get_row(n))
+
+def load_publication(jr1report):
+    publication = Publication()
+    for n in jr1report.data_range():
+        publication.insert(jr1report.get_row(n))
 
 def log_error(err_msg):
     logfile = open('errors.log', 'a')
@@ -30,5 +34,6 @@ if __name__ == "__main__":
                 jr1report = JR1Report(f)
                 load_platform(jr1report)
                 load_publisher(jr1report)
-            except:
+                load_publication(jr1report)
+            except Exception as e:
                 log_error(f + ' | ' + str(sys.exc_info()[0]) + ' | ' + str(sys.exc_info()[1]))
