@@ -125,10 +125,12 @@ class Publication(Counter):
         self._rowcount += 1
         return self._rowcount
 
-    def _is_duplicate(self, publication_title, publisher_id):
+    def _is_duplicate(self, publication_title, publisher_id, proprietary_id):
         isdupe = False
-        sql = u'SELECT * FROM publication WHERE title = "{0}" AND publisher_id = {1}' \
-            .format(publication_title, publisher_id)
+        sql = u'SELECT * FROM publication WHERE title = "{0}" \
+            AND publisher_id = {1} \
+            AND proprietary_id = "{2}"' \
+            .format(publication_title, publisher_id, proprietary_id)
         cursor = Counter.conn.cursor(buffered=True)
         cursor.execute(sql)
         if cursor.rowcount != 0:
@@ -151,10 +153,57 @@ class Publication(Counter):
         self._publisher_id = self._publisher.publisher_id(publisher_name, self._platform_id)
 
         # Insert unique publications
-        if not self._is_duplicate(journal_title, self._publisher_id):
+        if not self._is_duplicate(journal_title, self._publisher_id, proprietary_id):
             sql = u'INSERT INTO publication (id, publisher_id, title, print_issn, online_issn, journal_doi, proprietary_id) \
                 VALUES ({0}, {1}, "{2}", "{3}", "{4}", "{5}", "{6}")'.format(self._next_id(), self._publisher_id, \
                 journal_title, print_issn, online_issn, journal_doi, proprietary_id)
+            cursor = Counter.conn.cursor()
+            cursor.execute(sql)
+            Counter.conn.commit()
+    
+    def publication_id(self, publication_title, publisher_name, platform_name):
+        sql = u'SELECT j.id FROM publication j \
+            JOIN publisher p ON p.id = j.publisher_id \
+            JOIN platform m ON m.id = p.platform_id \
+            WHERE j.title = "{0}" \
+            AND p.name = "{1}" \
+            AND m.name = "{2}"' \
+            .format(publication_title, publisher_name,platform_name)
+        cursor = Counter.conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        return rows[0][0]
+
+class UsageStat(Counter):
+
+    def __init__(self):
+        self._rowcount = Counter.get_rowcount(self, 'usage_stat')
+        self._publication = Publication()
+    
+    def _next_id(self):
+        self._rowcount += 1
+        return self._rowcount
+
+    def insert(self, datarow, period_from, period_to):
+
+        publication_title = datarow[1]
+        if not datarow[2]:
+            publisher_name = 'Not Defined'
+        else:
+            publisher_name = datarow[2]
+        platform_name = datarow[3]
+        publication_id = self._publication.publication_id(
+            publication_title,
+            publisher_name,
+            platform_name)
+        
+        cols = range(10, 23)
+        for m in range(period_from.month, period_to.month + 1):
+            period = datetime.date(period_from.year, m, 1).strftime('%Y-%m-%d')
+            requests = datarow[cols[m]]
+            sql = u'INSERT INTO usage_stat (id, publication_id, period, requests) \
+                VALUES ({0}, {1}, "{2}", {3})' \
+                .format(self._next_id(), publication_id, period, requests)
             cursor = Counter.conn.cursor()
             cursor.execute(sql)
             Counter.conn.commit()

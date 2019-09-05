@@ -1,6 +1,6 @@
 from dataloader.jr1report import JR1Report
-from dataloader.counterdb import Platform, Publisher, Publication
-import sys, glob, os
+from dataloader.counterdb import Platform, Publisher, Publication, UsageStat
+import sys, glob
 
 def load_platform(jr1report):
     platform = Platform()
@@ -15,6 +15,11 @@ def load_publication(jr1report):
     publication = Publication()
     for n in jr1report.data_range():
         publication.insert(jr1report.get_row(n))
+
+def load_usage(jr1report):
+    usage = UsageStat()
+    for n in jr1report.data_range():
+        usage.insert(jr1report.get_row(n), jr1report.period_from, jr1report.period_to)
 
 def log_error(err_msg):
     logfile = open('errors.log', 'a')
@@ -32,8 +37,9 @@ if __name__ == "__main__":
             print 'Processing ' + f
             try:
                 jr1report = JR1Report(f)
-                load_platform(jr1report)
-                load_publisher(jr1report)
-                load_publication(jr1report)
+                #load_platform(jr1report)
+                #load_publisher(jr1report)
+                #load_publication(jr1report)
+                load_usage(jr1report)
             except Exception as e:
                 log_error(f + ' | ' + str(sys.exc_info()[0]) + ' | ' + str(sys.exc_info()[1]))
