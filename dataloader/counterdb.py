@@ -5,7 +5,7 @@ from datetime import date
 
 class Counter:
 
-    conn = mysql.connector.connect(**config.config.dbargs)
+    conn = mysql.connector.connect(**config.config.dbargs['dev'])
 
     def get_rowcount(self, table):
         rowcount = 0

@@ -29,17 +29,17 @@ def log_error(err_msg):
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        print 'Usage: python jr1loader.py <report directory>'
+        print('Usage: python jr1loader.py <report directory>')
     else:
         jr1dir = sys.argv[1]
         files = glob.glob(jr1dir + '/*.xlsx')
         for f in files:
-            print 'Processing ' + f
+            print('Processing {}'.format(f))
             try:
                 jr1report = JR1Report(f)
-                #load_platform(jr1report)
+                load_platform(jr1report)
                 #load_publisher(jr1report)
                 #load_publication(jr1report)
-                load_usage(jr1report)
+                #load_usage(jr1report)
             except Exception as e:
                 log_error(f + ' | ' + str(sys.exc_info()[0]) + ' | ' + str(sys.exc_info()[1]))
