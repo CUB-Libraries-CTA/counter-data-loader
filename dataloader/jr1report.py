@@ -15,26 +15,37 @@ class JR1Report:
     def __init__(self, workbook):
         self._workbook = openpyxl.load_workbook(filename=workbook, data_only=True)
         self._worksheet = self._workbook.active
+        self._period = self._worksheet.cell(row=5, column=1).value
     
     @property
     def platform(self):
+        """
+        Returns the platform name represented in cell C10
+        """
+        
         return self._worksheet.cell(row=10, column=3).value
 
     @property
     def period_from(self):
-        period = self._worksheet.cell(row=5, column=1).value
-        return datetime.strptime(period.strip()[:10], '%Y-%m-%d')
+        """
+        Returns the period from date represented in cell A5
+        """
+        
+        return datetime.strptime(self._period.strip()[:10], '%Y-%m-%d')
 
     @property
     def period_to(self):
-        period = self._worksheet.cell(row=5, column=1).value
-        return datetime.strptime(period.strip()[-10:], '%Y-%m-%d')
+        """
+        Returns the period to date represented in cell A5
+        """
+        
+        return datetime.strptime(self._period.strip()[-10:], '%Y-%m-%d')
 
     def data_range(self):
         """
         Returns the range of rows containing publication data.
 
-        According to the COUNTER Code of Practice R4 publication data always
+        According to the COUNTER Code of Practice R4, publication data always
         starts at row 10 in the spreadsheet.
         """
 
@@ -43,11 +54,12 @@ class JR1Report:
             if row[0].value == None:
                 break
             row_num = row_num + 1
-        return range(10, row_num)
+            
+        return list(range(10, row_num))
     
     def get_row(self, row_num):
         """
-        Returns a complete row (list) of publication data for the given row number.
+        Returns a complete row of publication data for the given row number.
 
         For a JR1 report covering twelve months of usage data (typically Jan-Dec),
         there will be 22 columns of data in the row. The first item in the list
@@ -59,5 +71,6 @@ class JR1Report:
         datarow.append(row_num)
         for row in self._worksheet.iter_cols(min_row=row_num, min_col=1, max_row=row_num, max_col=22):
             for cell in row:
-                datarow.append(unicode(cell.value).replace('"', ''))
+                datarow.append(str(cell.value).replace('"', ''))
+        
         return datarow
