@@ -1,6 +1,6 @@
 import openpyxl
 from datetime import datetime
-import string
+import string, os
 
 class JR1Report:
     """
@@ -16,6 +16,15 @@ class JR1Report:
         self._workbook = openpyxl.load_workbook(filename=workbook, data_only=True)
         self._worksheet = self._workbook.active
         self._period = self._worksheet.cell(row=5, column=1).value
+        self._filename = os.path.basename(workbook)
+    
+    @property
+    def filename(self):
+        """
+        Returns the Excel file name
+        """
+        
+        return self._filename
     
     @property
     def platform(self):
@@ -25,6 +34,14 @@ class JR1Report:
         
         return self._worksheet.cell(row=10, column=3).value
 
+    @property
+    def period(self):
+        """
+        Returns the report period represented in cell A5
+        """
+        
+        return self._period
+    
     @property
     def period_from(self):
         """
