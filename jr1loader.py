@@ -1,6 +1,7 @@
 from dataloader.jr1report import JR1Report
 from dataloader.counterdb import Platform, Publisher, Publication, UsageStat
 import sys, glob
+import traceback
 from datetime import date
 
 def load_platform(jr1report):
@@ -83,4 +84,4 @@ if __name__ == "__main__":
                         str(len(jr1report.data_range())))
                     write_processed(line)
                 except Exception as e:
-                    write_error('{0} | {1} | {2}'.format(f, str(sys.exc_info()[0]), str(sys.exc_info()[1])))
+                    write_error('{0}\n{1}'.format(f, traceback.format_exc()))

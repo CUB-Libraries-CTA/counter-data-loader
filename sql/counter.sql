@@ -31,7 +31,7 @@ CREATE TABLE publisher (
 CREATE TABLE publication (
   id INT NOT NULL,
   publisher_id INT NOT NULL,
-  title VARCHAR(250) NOT NULL,
+  title VARCHAR(400) NOT NULL,
   print_issn VARCHAR(15) NULL,
   online_issn VARCHAR(15) NULL,
   journal_doi VARCHAR(100) NULL,
@@ -40,9 +40,7 @@ CREATE TABLE publication (
   INDEX PUBLISHER_ID_IDX (publisher_id ASC),
   CONSTRAINT PUBLISHER_ID_FK
     FOREIGN KEY (publisher_id)
-    REFERENCES publisher (id)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION);
+    REFERENCES publisher (id));
 
 -- -----------------------------------------------------
 -- Table usage_stat
@@ -56,9 +54,7 @@ CREATE TABLE usage_stat (
   INDEX PUBLICATION_ID_IDX (publication_id ASC),
   CONSTRAINT PUBLICATION_ID_FK
     FOREIGN KEY (publication_id)
-    REFERENCES publication (id)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION);
+    REFERENCES publication (id));
 
 -- -----------------------------------------------------
 -- Table filter
@@ -68,8 +64,8 @@ CREATE TABLE filter (
   name VARCHAR(100) NOT NULL,
   description VARCHAR(250) DEFAULT NULL,
   params VARCHAR(500) NOT NULL,
-  create_date DATETIME NOT NULL,
-  update_date DATETIME NOT NULL,
+  created_date DATETIME NOT NULL,
+  updated_date DATETIME NOT NULL,
   owner VARCHAR(10) NOT NULL,
   PRIMARY KEY (id));
 
