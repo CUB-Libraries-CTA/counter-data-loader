@@ -1,6 +1,8 @@
 from dataloader.jr1report import JR1Report
 from dataloader.counterdb import Platform, Publisher, Publication, UsageStat
 import sys, glob
+import traceback
+from datetime import date
 
 def load_platform(jr1report):
     platform = Platform()
@@ -21,10 +23,26 @@ def load_usage(jr1report):
     for n in jr1report.data_range():
         usage.insert(jr1report.get_row(n), jr1report.period_from, jr1report.period_to)
 
-def log_error(err_msg):
-    logfile = open('errors.log', 'a')
+def write_error(err_msg):
+    logfile = open('errors.log', 'at')
     logfile.write(err_msg + '\n')
     logfile.close()
+    
+def write_processed(line):
+    logfile = open('processed.log', 'at')
+    logfile.write('{}\n'.format(line))
+    logfile.close()
+    
+def read_processed():
+    processed = list()
+    try:
+        logfile = open('processed.log', 'rt')
+        for line in logfile:
+            processed.append(line.rstrip())
+    except FileNotFoundError:
+        logfile = open('processed.log', 'xt')
+    logfile.close()
+    return list(processed)
 
 if __name__ == "__main__":
 
@@ -38,19 +56,32 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         print('Usage: python jr1loader.py <report directory>')
     else:
+        
+        # Get list of files that have already been processed
+        processed = read_processed()
+
+        # Begin processing individual JR1 reports. If something 
+        # goes wrong, write a log entry and move on to the
+        # next report.
         jr1dir = sys.argv[1]
         files = glob.glob('{}/*.xlsx'.format(jr1dir))
         for f in files:
-            print(('Processing {}'.format(f)))
-
-            # Begin processing individual JR1 reports. If something 
-            # goes wrong, write a log entry and move on to the
-            # next report.
-            try:
-                jr1report = JR1Report(f)
-                load_platform(jr1report)
-                load_publisher(jr1report)
-                load_publication(jr1report)
-                #load_usage(jr1report)
-            except Exception as e:
-                log_error('{0} | {1} | {2}'.format(f, str(sys.exc_info()[0]), str(sys.exc_info()[1])))
+            if f not in processed:
+                print(('Processing {}'.format(f)))
+                try:
+                    # Run through the load routines sequentially
+                    jr1report = JR1Report(f)
+                    load_platform(jr1report)
+                    load_publisher(jr1report)
+                    load_publication(jr1report)
+                    load_usage(jr1report)
+                    
+                    # Create a log entry for the file just processed
+                    line = '{0},{1},{2},{3}'.format(
+                        jr1report.filename,
+                        jr1report.period,
+                        date.isoformat(date.today()),
+                        str(len(jr1report.data_range())))
+                    write_processed(line)
+                except Exception as e:
+                    write_error('{0}\n{1}'.format(f, traceback.format_exc()))

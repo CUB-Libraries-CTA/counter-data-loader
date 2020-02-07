@@ -1,6 +1,6 @@
 import openpyxl
 from datetime import datetime
-import string
+import string, os
 
 class JR1Report:
     """
@@ -15,7 +15,17 @@ class JR1Report:
     def __init__(self, workbook):
         self._workbook = openpyxl.load_workbook(filename=workbook, data_only=True)
         self._worksheet = self._workbook.active
-        self._period = self._worksheet.cell(row=5, column=1).value
+        self._offset = self._get_offset()
+        self._period = self._worksheet.cell(row=5+self._offset, column=1).value
+        self._filename = os.path.basename(workbook)
+    
+    @property
+    def filename(self):
+        """
+        Returns the Excel file name
+        """
+        
+        return self._filename
     
     @property
     def platform(self):
@@ -23,8 +33,16 @@ class JR1Report:
         Returns the platform name represented in cell C10
         """
         
-        return self._worksheet.cell(row=10, column=3).value
+        return self._worksheet.cell(row=10+self._offset, column=3).value
 
+    @property
+    def period(self):
+        """
+        Returns the report period represented in cell A5
+        """
+        
+        return self._period
+    
     @property
     def period_from(self):
         """
@@ -49,13 +67,13 @@ class JR1Report:
         starts at row 10 in the spreadsheet.
         """
 
-        row_num = 10
-        for row in self._worksheet.iter_rows(min_row=10, min_col=1, max_row=10000, max_col=1):
+        row_num = 10 + self._offset
+        for row in self._worksheet.iter_rows(min_row=10+self._offset, min_col=1, max_row=1048576, max_col=1):
             if row[0].value == None:
                 break
             row_num = row_num + 1
             
-        return list(range(10, row_num))
+        return list(range(10+self._offset, row_num))
     
     def get_row(self, row_num):
         """
@@ -71,6 +89,30 @@ class JR1Report:
         datarow.append(row_num)
         for row in self._worksheet.iter_cols(min_row=row_num, min_col=1, max_row=row_num, max_col=22):
             for cell in row:
-                datarow.append(str(cell.value).replace('"', ''))
+                if cell.value != None: # Check for empty cells
+                    datarow.append(str(cell.value).replace('"', ''))
+                else:
+                    datarow.append('')
         
         return datarow
+
+    def _get_offset(self):
+        """
+        Returns the offset (if any) if the starting row is not 1.
+        
+        The COUNTER 4 standard requires that the JR1 report start at row 1 with
+        the text 'Journal Report 1(R4)' in the first cell (A1). If the report begins
+        on a subsequent row, the value of A1 will be different.
+        """
+        
+        offset = 0
+        if not str(self._worksheet.cell(row=1, column=1).value).startswith('Journal Report'):
+            offset = 1
+            while True:
+                contents = str(self._worksheet.cell(row=1+offset, column=1).value)
+                if contents.startswith('Journal Report'):
+                    break
+                else:
+                    offset += 1
+        
+        return offset
