@@ -7,21 +7,25 @@ from datetime import date
 def load_platform(jr1report):
     platform = Platform()
     platform.insert(jr1report.platform)
+    platform = None
 
 def load_publisher(jr1report):
     publisher = Publisher()
     for n in jr1report.data_range():
         publisher.insert(jr1report.get_row(n))
+    publisher = None
 
 def load_publication(jr1report):
     publication = Publication()
     for n in jr1report.data_range():
         publication.insert(jr1report.get_row(n))
+    publication = None
 
 def load_usage(jr1report):
     usage = UsageStat()
     for n in jr1report.data_range():
         usage.insert(jr1report.get_row(n), jr1report.period_from, jr1report.period_to)
+    usage = None
 
 def write_error(err_msg):
     logfile = open('errors.log', 'at')
@@ -69,6 +73,7 @@ if __name__ == "__main__":
             if f not in processed:
                 print(('Processing {}'.format(f)))
                 try:
+                    
                     # Run through the load routines sequentially
                     jr1report = JR1Report(f)
                     load_platform(jr1report)
@@ -83,5 +88,9 @@ if __name__ == "__main__":
                         date.isoformat(date.today()),
                         str(len(jr1report.data_range())))
                     write_processed(line)
+                    
+                    # Cleanup
+                    jr1report = None
+                    
                 except Exception as e:
                     write_error('{0}\n{1}'.format(f, traceback.format_exc()))
