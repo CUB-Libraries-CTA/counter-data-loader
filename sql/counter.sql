@@ -3,6 +3,7 @@
 -- -----------------------------------------------------
 -- Database counter
 -- -----------------------------------------------------
+DROP DATABASE IF EXISTS counter;
 CREATE DATABASE counter
   CHARACTER SET = utf8;
 
