@@ -1,5 +1,8 @@
 config/
 jr1reports/
+sql/
+!sql/counter.sql
 errors.log
 processed.log
+processed.log.backup
 *.pyc
