@@ -1,5 +1,4 @@
 config/
-jr1reports/
-errors.log
-processed.log
+reports/
+*.log
 *.pyc
