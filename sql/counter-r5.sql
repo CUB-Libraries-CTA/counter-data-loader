@@ -47,10 +47,11 @@ CREATE TABLE filter (
 
 CREATE TABLE platform_ref (
     id INT NOT NULL,
-    alt_id INT NOT NULL,
+    alt_id INT NULL,
     name VARCHAR(100) NOT NULL,
     alias VARCHAR(100) NULL,
     preferred_name VARCHAR(100) NOT NULL,
+    has_faq TINYINT NOT NULL DEFAULT 0,
     PRIMARY KEY (id));
 
 CREATE VIEW title_report_view AS (
