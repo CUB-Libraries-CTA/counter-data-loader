@@ -1,0 +1,73 @@
+id	alt_id	name	alias	preferred_name	has_faq
+1	19	Accessible Archives		Accessible Archives	0
+2	14	ACM Digital Library	acm	ACM Digital Library	0
+3	10	ACS Publications	ACS	American Chemical Society	0
+4	40	AEA Publications	AEA	American Economic Association (AEA)	0
+5	54	Akademiai Kiado	AK Journals	Akademiai Kiado (AK Journals)	0
+6	76	Allen Press Pinnacle		Allen Press Pinnacle	1
+7	2	American Psychiatric Publishing		American Psychiatric Publishing	0
+8	80	American Society of Civil Engineers	ASCE	American Society of Civil Engineers (ASCE)	0
+9	3	AMS Journals	AMS	American Meteorological Society (AMS)	0
+10	52	AMS Website	AMS	American Mathematical Society (AMS)	0
+11	30	Annual Reviews		Annual Reviews	0
+12	33	APS	APS	American Physical Society (APS)	0
+13	35	APS Journals	APS	American Phytopathological Society (APS)	0
+14	70	ASA	ASA	American Society of Agronomy (ASA)	0
+15	21	astm.org	ASTM	American Society for Testing and Materials (ASTM)	0
+16	61	Berghahn Journals		Berghahn Journals	0
+17	7	BioOne		BioOne	0
+18	68	BMJ Journals	BMJ	British Medical Journals (BMJ)	0
+19	67	Brill	BOPI	Brill	0
+20	65	businessresearcher.sagepub.com		SAGE Knowledge	0
+21	62	Cambridge Core	CJO	Cambridge Core	0
+22	15	Canadian Science Publishing		Canadian Science Publishing	0
+23	50	CSIRO		CSIRO	0
+24	36	De Gruyter Online	degruyter.com	De Gruyter Online	0
+25	44	DL		Begell House	0
+26	27	EBSCOhost		EBSCOhost	0
+27	26	Edinburgh University Press		Edinburgh University Press	0
+28	28	Emerald Group Publishing Limited		Emerald Insight	0
+29	75	Factiva.com		Factiva	0
+30	47	GOLD		Gale	0
+31	29	Guilford Publications Inc.		Guilford Press	0
+32	24	HighWire Press		Highwire Press	1
+33	45	ICE Virtual Library	ICE	Institution of Civil Engineers Virtual Library (ICE)	0
+34	39	IEEE Xplore		IEEE Xplore	0
+35	1	ingentaconnect		IngentaConnect	0
+36	4	IOPscience		IOPscience	0
+37	46	Ithaka		JSTOR	0
+38	22	J-STAGE	J-STAGE	Japan Science and Technology Information Aggregator, Electronic (J-STAGE)	0
+39	64	library.cqpress.com		CQ Press Library	0
+40	9	Mary Ann Liebert, Inc. Online Customer Support		Mary Ann Liebert	0
+41	5	MIT Press Journals		MIT Press Journals	0
+42	69	Morgan & Claypool		Morgan & Claypool	0
+43	42	nature.com		Nature	0
+44	25	NewsBank		NewsBank	0
+45	31	OECD iLibrary		OECD iLibrary	0
+46	11	OSA Publishing	OSA	Optical Society of America (OSA)	0
+47	13	Ovid		Ovid	0
+48	63	Oxford Academic	Oxford Journals	Oxford Academic	0
+49	59	palgrave-journals.com		Palgrave Macmillan	0
+50	60	physio	APS	American Physiological Society (APS)	0
+51	43	Project Euclid		Project Euclid	0
+52	12	Project MUSE		Project MUSE	0
+53	37	ProQuest		ProQuest	0
+54	18	rsc.org	RSC	Royal Society of Chemistry (RSC)	0
+55	58	SAGE Journals		SAGE Journals	0
+56	41	ScienceDirect	ScienceDirect.com;ScienceDirect licensed content	ScienceDirect	0
+57	66	Sciendo		Sciendo	1
+58	17	Scitation	AIP	American Institute of Physics (AIP)	0
+59	32	Silverchair		Silverchair	1
+60	34	Sirius		Sirius	1
+61	16	Society for Industrial and Applied Mathematics	SIAM	Society for Industrial and Applied Mathematics (SIAM)	0
+62	72	SPIE	SPIE	Society of Photo-optical Instrumentation Engineers Digital Library (SPIE)	0
+63	6	SpringerLink		SpringerLink	0
+64	20	Taylor & Francis		Taylor & Francis	0
+65	49	The American Institute of Aeronautics and Astronautics	AIAA	The American Institute of Aeronautics and Astronautics (AIAA)	0
+66	56	Thieme E-Books & E-Journals		Thieme-Connect	0
+67	78	University of Chicago Press Journals		University of Chicago Press Journals	0
+68	51	University of Toronto Press		University of Toronto Press	0
+69	57	Vision4Press		EDP Sciences	0
+70	8	Wiley Online Library		Wiley Online Library	0
+71	73	World Bank eLibrary		World Bank eLibrary	0
+72	71	World Scientific Publishing Company		World Scientific Publishing Company	0
