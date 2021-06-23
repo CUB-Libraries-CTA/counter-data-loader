@@ -1,8 +1,7 @@
-DROP DATABASE counter;
-CREATE DATABASE counter DEFAULT CHARACTER SET latin1;
-USE counter;
+DROP DATABASE IF EXISTS counter5;
+CREATE DATABASE counter5 DEFAULT CHARACTER SET latin1;
+USE counter5;
 
--- create the tables
 CREATE TABLE title_report (
     id INT NOT NULL AUTO_INCREMENT,
     title VARCHAR(400) NOT NULL,
@@ -18,7 +17,10 @@ CREATE TABLE title_report (
     uri VARCHAR(200) NULL,
     yop VARCHAR(4) NULL,
     status CHAR(1) NULL,
-    PRIMARY KEY (id));
+    PRIMARY KEY (id),
+    INDEX TITLE_IDX (title)
+    INDEX PUBLISHER_IDX (publisher)
+    INDEX STATUS_IDX (status));
   
 CREATE TABLE metric (
     id INT NOT NULL AUTO_INCREMENT,
@@ -30,6 +32,7 @@ CREATE TABLE metric (
     period DATE NOT NULL,
     period_total INT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
+    INDEX PERIOD_IDX (period),
     INDEX TITLE_REPORT_ID_IDX (title_report_id ASC),
     CONSTRAINT TITLE_REPORT_ID_FK
         FOREIGN KEY (title_report_id)
