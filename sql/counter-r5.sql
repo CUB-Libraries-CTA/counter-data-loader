@@ -1,12 +1,12 @@
 DROP DATABASE IF EXISTS counter5;
-CREATE DATABASE counter5 DEFAULT CHARACTER SET latin1;
+CREATE DATABASE counter5 DEFAULT CHARACTER SET utf8mb4;
 USE counter5;
 
 CREATE TABLE title_report (
     id INT NOT NULL AUTO_INCREMENT,
     title VARCHAR(400) NOT NULL,
     title_type CHAR(1) NOT NULL,
-    publisher VARCHAR(100) NOT NULL,
+    publisher VARCHAR(200) NOT NULL,
     publisher_id VARCHAR(50) NULL,
     platform_id INT NOT NULL,
     doi VARCHAR(100) NULL,
@@ -18,9 +18,9 @@ CREATE TABLE title_report (
     yop VARCHAR(4) NULL,
     status CHAR(1) NULL,
     PRIMARY KEY (id),
-    INDEX TITLE_IDX (title)
-    INDEX PUBLISHER_IDX (publisher)
-    INDEX STATUS_IDX (status));
+    INDEX (title(50)),
+    INDEX (publisher(50)),
+    INDEX (status));
   
 CREATE TABLE metric (
     id INT NOT NULL AUTO_INCREMENT,
@@ -32,8 +32,8 @@ CREATE TABLE metric (
     period DATE NOT NULL,
     period_total INT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
-    INDEX PERIOD_IDX (period),
-    INDEX TITLE_REPORT_ID_IDX (title_report_id ASC),
+    INDEX (period),
+    INDEX (title_report_id ASC),
     CONSTRAINT TITLE_REPORT_ID_FK
         FOREIGN KEY (title_report_id)
         REFERENCES title_report (id));
@@ -52,7 +52,6 @@ CREATE TABLE platform_ref (
     id INT NOT NULL,
     alt_id INT NULL,
     name VARCHAR(100) NOT NULL,
-    alias VARCHAR(100) NULL,
     preferred_name VARCHAR(100) NOT NULL,
     has_faq TINYINT NOT NULL DEFAULT 0,
     PRIMARY KEY (id));
@@ -84,5 +83,6 @@ CREATE VIEW title_report_view AS (
         platform_ref p ON p.id = t.platform_id
     ORDER BY
         m.period_total DESC,
+        m.period ASC,
         t.title ASC
 );

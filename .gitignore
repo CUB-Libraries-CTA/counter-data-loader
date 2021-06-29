@@ -2,3 +2,4 @@ config/
 reports/
 *.log
 *.pyc
+*.sh
