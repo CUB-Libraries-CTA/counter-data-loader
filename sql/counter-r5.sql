@@ -43,6 +43,7 @@ CREATE TABLE filter (
   name VARCHAR(100) NOT NULL,
   description VARCHAR(250) DEFAULT NULL,
   params VARCHAR(500) NOT NULL,
+  title_type CHAR(1) NOT NULL,
   created_date DATETIME NOT NULL,
   updated_date DATETIME NOT NULL,
   owner VARCHAR(10) NOT NULL,
