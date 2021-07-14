@@ -57,97 +57,72 @@ CREATE TABLE platform_ref (
     has_faq TINYINT NOT NULL DEFAULT 0,
     PRIMARY KEY (id));
 
-CREATE VIEW title_report_view AS (
-    SELECT
-        (t.id + m.id) AS id,
-        t.title AS title,
-        t.title_type AS title_type,
-        p.preferred_name AS platform,
-        t.publisher AS publisher,
-        t.doi AS doi,
-        t.proprietary_id AS proprietary_id,
-        t.isbn AS isbn,
-        t.print_issn AS print_issn,
-        t.online_issn AS online_issn,
-        t.uri AS uri,
-        t.yop AS yop,
-        t.status AS status,
-        m.access_type AS access_type,
-        m.metric_type AS metric_type,
-        m.period as period,
-        m.period_total AS period_total
-    FROM
-        title_report t
-    JOIN
-        metric m ON m.title_report_id = t.id
-    JOIN
-        platform_ref p ON p.id = t.platform_id
-    ORDER BY
-        m.period_total DESC,
-        m.period ASC,
-        t.title ASC
-);
+CREATE TABLE title_report_mview (
+    id INT AUTO_INCREMENT,
+    title_report_id INT,
+    metric_id INT,
+    title VARCHAR(400),
+    title_type CHAR(1),
+    platform VARCHAR(100),
+    publisher VARCHAR(200),
+    doi VARCHAR(100),
+    proprietary_id VARCHAR(100),
+    isbn VARCHAR(20),
+    print_issn VARCHAR(15),
+    online_issn VARCHAR(15),
+    uri VARCHAR(200),
+    yop VARCHAR(4),
+    status CHAR(1),
+    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
+    metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
+        'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
+        'No_License'),
+    period DATE,
+    period_total INT,
+    PRIMARY KEY (id));
 
-CREATE VIEW title_report_journal_view AS (
-    SELECT
-        (t.id + m.id) AS id,
-        t.title AS title,
-        t.title_type AS title_type,
-        p.preferred_name AS platform,
-        t.publisher AS publisher,
-        t.doi AS doi,
-        t.proprietary_id AS proprietary_id,
-        t.print_issn AS print_issn,
-        t.online_issn AS online_issn,
-        t.uri AS uri,
-        t.status AS status,
-        m.access_type AS access_type,
-        m.metric_type AS metric_type,
-        m.period as period,
-        m.period_total AS period_total
-    FROM
-        title_report t
-    JOIN
-        metric m ON m.title_report_id = t.id
-    JOIN
-        platform_ref p ON p.id = t.platform_id
-    WHERE
-        title_type = 'J'
-    ORDER BY
-        m.period_total DESC,
-        m.period ASC,
-        t.title ASC
-);
+CREATE TABLE title_report_journal_mview (
+    id INT AUTO_INCREMENT,
+    title_report_id INT,
+    metric_id INT,
+    title VARCHAR(400),
+    title_type CHAR(1),
+    platform VARCHAR(100),
+    publisher VARCHAR(200),
+    doi VARCHAR(100),
+    proprietary_id VARCHAR(100),
+    print_issn VARCHAR(15),
+    online_issn VARCHAR(15),
+    uri VARCHAR(200),
+    status CHAR(1),
+    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
+    metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
+        'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
+        'No_License'),
+    period DATE,
+    period_total INT,
+    PRIMARY KEY (id));
 
-CREATE VIEW title_report_book_view AS (
-    SELECT
-        (t.id + m.id) AS id,
-        t.title AS title,
-        t.title_type AS title_type,
-        p.preferred_name AS platform,
-        t.publisher AS publisher,
-        t.doi AS doi,
-        t.proprietary_id AS proprietary_id,
-        t.isbn AS isbn,
-        t.print_issn AS print_issn,
-        t.online_issn AS online_issn,
-        t.uri AS uri,
-        t.yop AS yop,
-        t.status AS status,
-        m.access_type AS access_type,
-        m.metric_type AS metric_type,
-        m.period as period,
-        m.period_total AS period_total
-    FROM
-        title_report t
-    JOIN
-        metric m ON m.title_report_id = t.id
-    JOIN
-        platform_ref p ON p.id = t.platform_id
-    WHERE
-        title_type = 'B'
-    ORDER BY
-        m.period_total DESC,
-        m.period ASC,
-        t.title ASC
-);
+CREATE TABLE title_report_book_mview (
+    id INT AUTO_INCREMENT,
+    title_report_id INT,
+    metric_id INT,
+    title VARCHAR(400),
+    title_type CHAR(1),
+    platform VARCHAR(100),
+    publisher VARCHAR(200),
+    doi VARCHAR(100),
+    proprietary_id VARCHAR(100),
+    isbn VARCHAR(20),
+    print_issn VARCHAR(15),
+    online_issn VARCHAR(15),
+    uri VARCHAR(200),
+    yop VARCHAR(4),
+    status CHAR(1),
+    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
+    metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
+        'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
+        'No_License'),
+    period DATE,
+    period_total INT,
+    PRIMARY KEY (id));
