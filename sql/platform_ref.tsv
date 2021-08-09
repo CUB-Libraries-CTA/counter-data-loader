@@ -80,4 +80,8 @@ id	alt_id	name	preferred_name	has_faq
 79	73	World Bank eLibrary	World Bank eLibrary	0
 80	71	World Scientific Publishing Company	World Scientific Publishing Company	0
 81	81	Not Defined	Not Defined	0
-82	82	AKKournals	Akademiai Kiado (AK Journals)	0
+82	82	AKJournals	Akademiai Kiado (AK Journals)	0
+83	0	acm	ACM Digital Library	0
+84	0	Brepols Publishers NV	Brepols Publishers NV	0
+85	0	Microbiology Society	Microbiology Society	0
+

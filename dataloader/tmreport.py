@@ -2,7 +2,6 @@ import openpyxl
 import collections
 import os
 
-
 class TitleMasterReport:
     """
     Represents a Title Master Report.
@@ -79,7 +78,7 @@ class TitleMasterReport:
         # Build the title/book info columns by iterating through the spreadsheet
         # columns beginning with A (Title)
         col = {'TR_J1': 11, 'TR_J3': 12, 'TR_B1': 13, 'TR_B3': 14}
-        header = list()
+        header = ['report_id', 'title_type']
         for row in self._worksheet.iter_cols(min_row=self.HEADER_ROW, min_col=1,
             max_row=self.HEADER_ROW, max_col=col[self.report_id], values_only=True):
             for cell in row:
@@ -101,30 +100,30 @@ class TitleMasterReport:
         variable and depends on the publisher.
         """
 
-        r = self.DATA_ROW_START
+        n = 0
         for row in self._worksheet.iter_rows(min_row=self.DATA_ROW_START, min_col=1,
             max_row=self.MAX_ROWS, max_col=1, values_only=True):
             if row[0] is None: # When no more data, the first cell in the row will be blank
                 break
-            r += 1
+            n += 1
 
-        return list(range(self.DATA_ROW_START,r))
+        return range(self.DATA_ROW_START, self.DATA_ROW_START + n)
 
-    def data_cols(self):
+    def _data_cols(self):
         """
         Returns the range of data columns. The actual number of columns
         depends on the report type.
         """
 
-        c = 1
+        n = 0
         for col in self._worksheet.iter_cols(min_row=self.HEADER_ROW,
             min_col=self.DATA_COL_START, max_row=self.HEADER_ROW,
             max_col=self.MAX_COLS, values_only=True):
             if col[0] is None:
                 break
-            c += 1
+            n += 1
 
-        return list(range(self.DATA_COL_START,c))
+        return range(self.DATA_COL_START, self.DATA_COL_START + n)
 
     def get_row(self, n):
         """
@@ -137,12 +136,16 @@ class TitleMasterReport:
         row_spec = collections.namedtuple('ReportRow', self._header_row())
 
         datarow = list()
-        for row in self._worksheet.iter_cols(min_row=n, min_col=1, max_row=n,
-            max_col=max(self.data_cols()), values_only=True):
+        datarow.append(self.report_id)
+        datarow.append(self.title_type)
+        for row in self._worksheet.iter_cols(min_row=n, min_col=self.DATA_COL_START,
+            max_row=n, max_col=len(self._data_cols()), values_only=True):
             for cell in row:
                 if cell is None: # Check for empty cells
-                    datarow.append('')
+                    datarow.append(None)
+                elif str(cell).isspace():
+                    datarow.append(None)
                 else:
-                    datarow.append(str(cell).replace('"', '')) # Remove quotes
+                    datarow.append(str(cell).strip())
 
         return row_spec._make(datarow)

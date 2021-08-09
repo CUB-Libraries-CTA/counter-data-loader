@@ -19,16 +19,16 @@ SELECT
     n.title AS title,
     'J' AS title_type,
     r.name AS publisher,
-    '' AS publisher_id,
+    NULL AS publisher_id,
     (SELECT id FROM platform_ref WHERE alt_id = r.platform_id) AS platform_id,
     n.journal_doi AS doi,
     n.proprietary_id AS proprietary_id,
-    '' AS isbn,
+    NULL AS isbn,
     n.print_issn AS print_issn,
     n.online_issn AS online_issn,
-    '' AS uri,
-    '' AS yop,
-    '' AS status
+    NULL AS uri,
+    NULL AS yop,
+    NULL AS status
 FROM
     counter.publication n
 JOIN

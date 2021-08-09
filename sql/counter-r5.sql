@@ -2,11 +2,20 @@ DROP DATABASE IF EXISTS counter5;
 CREATE DATABASE counter5 DEFAULT CHARACTER SET utf8mb4;
 USE counter5;
 
+CREATE TABLE platform_ref (
+    id INT NOT NULL,
+    alt_id INT NULL,
+    name VARCHAR(100) NOT NULL,
+    preferred_name VARCHAR(100) NOT NULL,
+    has_faq TINYINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE title_report (
     id INT NOT NULL AUTO_INCREMENT,
     title VARCHAR(400) NOT NULL,
     title_type CHAR(1) NOT NULL,
-    publisher VARCHAR(200) NOT NULL,
+    publisher VARCHAR(200) NULL,
     publisher_id VARCHAR(50) NULL,
     platform_id INT NOT NULL,
     doi VARCHAR(100) NULL,
@@ -20,7 +29,8 @@ CREATE TABLE title_report (
     PRIMARY KEY (id),
     INDEX (title(50)),
     INDEX (publisher(50)),
-    INDEX (status));
+    FOREIGN KEY (platform_id) REFERENCES platform_ref (id)
+);
   
 CREATE TABLE metric (
     id INT NOT NULL AUTO_INCREMENT,
@@ -34,9 +44,8 @@ CREATE TABLE metric (
     PRIMARY KEY (id),
     INDEX (period),
     INDEX (title_report_id ASC),
-    CONSTRAINT TITLE_REPORT_ID_FK
-        FOREIGN KEY (title_report_id)
-        REFERENCES title_report (id));
+    FOREIGN KEY (title_report_id) REFERENCES title_report (id)
+);
 
 CREATE TABLE filter (
   id INT NOT NULL AUTO_INCREMENT,
@@ -47,39 +56,8 @@ CREATE TABLE filter (
   created_date DATETIME NOT NULL,
   updated_date DATETIME NOT NULL,
   owner VARCHAR(10) NOT NULL,
-  PRIMARY KEY (id));
-
-CREATE TABLE platform_ref (
-    id INT NOT NULL,
-    alt_id INT NULL,
-    name VARCHAR(100) NOT NULL,
-    preferred_name VARCHAR(100) NOT NULL,
-    has_faq TINYINT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id));
-
-CREATE TABLE title_report_mview (
-    id INT AUTO_INCREMENT,
-    title_report_id INT,
-    metric_id INT,
-    title VARCHAR(400),
-    title_type CHAR(1),
-    platform VARCHAR(100),
-    publisher VARCHAR(200),
-    doi VARCHAR(100),
-    proprietary_id VARCHAR(100),
-    isbn VARCHAR(20),
-    print_issn VARCHAR(15),
-    online_issn VARCHAR(15),
-    uri VARCHAR(200),
-    yop VARCHAR(4),
-    status CHAR(1),
-    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
-    metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
-        'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
-        'No_License'),
-    period DATE,
-    period_total INT,
-    PRIMARY KEY (id));
+  PRIMARY KEY (id)
+);
 
 CREATE TABLE title_report_journal_mview (
     id INT AUTO_INCREMENT,
@@ -101,7 +79,10 @@ CREATE TABLE title_report_journal_mview (
         'No_License'),
     period DATE,
     period_total INT,
-    PRIMARY KEY (id));
+    INDEX (title_report_id),
+    INDEX (period),
+    PRIMARY KEY (id)
+);
 
 CREATE TABLE title_report_book_mview (
     id INT AUTO_INCREMENT,
@@ -125,4 +106,7 @@ CREATE TABLE title_report_book_mview (
         'No_License'),
     period DATE,
     period_total INT,
-    PRIMARY KEY (id));
+    INDEX (title_report_id),
+    INDEX (period),
+    PRIMARY KEY (id)
+);
