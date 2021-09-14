@@ -80,6 +80,8 @@ CREATE TABLE title_report_journal_mview (
     period DATE,
     period_total INT,
     INDEX (title_report_id),
+    INDEX (platform),
+    INDEX (publisher),
     INDEX (period),
     PRIMARY KEY (id)
 );
@@ -107,6 +109,8 @@ CREATE TABLE title_report_book_mview (
     period DATE,
     period_total INT,
     INDEX (title_report_id),
+    INDEX (platform),
+    INDEX (publisher),
     INDEX (period),
     PRIMARY KEY (id)
 );
