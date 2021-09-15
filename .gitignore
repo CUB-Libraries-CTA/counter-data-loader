@@ -1,5 +1,6 @@
-config/
-jr1reports/
-errors.log
-processed.log
+reports/
+scripts/
+dataloader/config.py
+*.log
 *.pyc
+*.sh
