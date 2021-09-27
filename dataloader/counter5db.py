@@ -1,6 +1,6 @@
 import mysql.connector
 import dataloader.config
-import collections
+import html
 import datetime
 from datetime import date
 
@@ -10,6 +10,7 @@ class CounterDb:
     connection object for child tables. This class is never instantiated
     on its own.
     """
+    NOVALUE = ''
 
     conn = mysql.connector.connect(**dataloader.config.dbargs)
 
@@ -41,47 +42,74 @@ class TitleReportTable(CounterDb):
         """
 
         platform = PlatformTable()
-        params = (row.title, row.publisher, platform.get_platform_id(row.platform),
-            row.doi, row.proprietary_id)
+        params = (row.title, row.publisher, platform.get_platform_id(row.platform))
         sql = u"SELECT id FROM title_report WHERE \
             title = %s AND \
             publisher = %s AND \
-            platform_id = %s AND \
-            (doi = %s OR doi IS NULL) AND \
-            (proprietary_id = %s OR proprietary_id IS NULL)"
+            platform_id = %s"
         cursor = CounterDb.conn.cursor(named_tuple=True, buffered=True)
         cursor.execute(sql, params)
         row = cursor.fetchone()
         cursor.close()
 
         return (row is not None), row
+    
+    def _set_publisher(self, publisher):
+        if publisher is None or '???' in publisher:
+            return 'Not Defined'
+        else:
+            return html.unescape(html.unescape(publisher))
+    
+    def _set_title(self, title):
+        return html.unescape(html.unescape(title))
 
     def insert(self, row):
         """
         Inserts a row in the title_report table.
         """
 
+        # If the title/publisher/platform combination already exists in this
+        # table, then we only need the rowid to insert metric data.
         isdupe, rowid = self._is_duplicate(row)
         if isdupe:
             rowid = rowid.id
+        
+        # If the row is not a duplicate, then proceed with assigning parameter
+        # values, which depends on whether this is R4 or R5 data.
         else:
+
+            # Check for blanks, fill characters, HTML entities in publisher and
+            # title fields.
+            publisher = self._set_publisher(row.publisher)
+            title = self._set_title(row.title)
+
+            # The parameter list is different for J1 and TR reports This requires
+            # a check of the report ID first before building the parameter list.
             platform = PlatformTable()
             if row.report_id.startswith('TR'):
-                isbn, yop = None, None
+
+                # isbn and yop only apply to book reports. For journals, these
+                # fields will be blank.
+                isbn, yop = self.NOVALUE, self.NOVALUE
                 if 'isbn' in row._fields:
                     isbn = row.isbn
                 if 'yop' in row._fields:
                     yop = row.yop
-                params = (row.title, row.title_type, row.publisher, row.publisher_id,
+
+                # Build the parameter list for TR reports.    
+                params = (title, row.title_type, publisher, row.publisher_id,
                     platform.get_platform_id(row.platform), row.doi,
                     row.proprietary_id, isbn, row.print_issn, row.online_issn,
-                    row.uri, yop, None)
+                    row.uri, yop, self.NOVALUE)
             else:
-                params = (row.title, row.title_type, row.publisher, None,
-                    platform.get_platform_id(row.platform), row.doi,
-                    row.proprietary_id, None, row.print_issn, row.online_issn,
-                    None, None, None)
 
+                # Build the parameter list for J1 reports.
+                params = (title, row.title_type, publisher, self.NOVALUE,
+                    platform.get_platform_id(row.platform), row.doi,
+                    row.proprietary_id, self.NOVALUE, row.print_issn, row.online_issn,
+                    self.NOVALUE, self.NOVALUE, self.NOVALUE)
+
+            # Do the insert and return the resultant row ID.
             sql = u"INSERT INTO title_report SET \
                 id = NULL, \
                 title = %s, \
@@ -127,15 +155,22 @@ class MetricTable(CounterDb):
         Inserts a row in the metric table. The row to insert must
         have a corresponding title entry (journal or book).
         """
+        
+        # Build date and period information needed for each row
         begin = date.fromisoformat(begin_date)
         end = date.fromisoformat(end_date)
         periods = ['', 'jan', 'feb', 'mar', 'apr', 'may', 'jun',
             'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        
+        # A row will be inserted for each month column in the source
+        # spreadsheet. The actual number of months is determined from
+        # start and end dates contained in the report header.
         for m in range(begin.month, end.month + 1):
             idx = row._fields.index(periods[m])
             period = datetime.date(begin.year, m, 1).strftime('%Y-%m-%d')
             period_total = int(row[idx])
 
+            # Build the parameters list according to the type of report.
             if row.report_id.startswith('TR'):
                 params = (rowid, self.ACCESS_TYPE.index(row.access_type),
                     self.METRIC_TYPE.index(row.metric_type),
@@ -143,6 +178,8 @@ class MetricTable(CounterDb):
             else:
                 params = (rowid, self.CONTROLLED, self.TOTAL_ITEM_REQUESTS,
                     period, period_total)
+            
+            # Do the insert and return.
             sql = u"INSERT INTO metric SET \
                 id = NULL, \
                 title_report_id = %s, \
