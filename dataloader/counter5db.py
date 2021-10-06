@@ -70,9 +70,9 @@ class TitleReportTable(CounterDb):
 
         # If the title/publisher/platform combination already exists in this
         # table, then we only need the rowid to insert metric data.
-        isdupe, rowid = self._is_duplicate(row)
+        isdupe, id = self._is_duplicate(row)
         if isdupe:
-            rowid = rowid.id
+            rowid = id.id
         
         # If the row is not a duplicate, then proceed with assigning parameter
         # values, which depends on whether this is R4 or R5 data.
@@ -86,28 +86,9 @@ class TitleReportTable(CounterDb):
             # The parameter list is different for J1 and TR reports This requires
             # a check of the report ID first before building the parameter list.
             platform = PlatformTable()
-            if row.report_id.startswith('TR'):
-
-                # isbn and yop only apply to book reports. For journals, these
-                # fields will be blank.
-                isbn, yop = self.NOVALUE, self.NOVALUE
-                if 'isbn' in row._fields:
-                    isbn = row.isbn
-                if 'yop' in row._fields:
-                    yop = row.yop
-
-                # Build the parameter list for TR reports.    
-                params = (title, row.title_type, publisher, row.publisher_id,
-                    platform.get_platform_id(row.platform), row.doi,
-                    row.proprietary_id, isbn, row.print_issn, row.online_issn,
-                    row.uri, yop, self.NOVALUE)
-            else:
-
-                # Build the parameter list for J1 reports.
-                params = (title, row.title_type, publisher, self.NOVALUE,
-                    platform.get_platform_id(row.platform), row.doi,
-                    row.proprietary_id, self.NOVALUE, row.print_issn, row.online_issn,
-                    self.NOVALUE, self.NOVALUE, self.NOVALUE)
+            params = (title, row.title_type, publisher, row.publisher_id,
+                platform.get_platform_id(row.platform), row.doi, row.proprietary_id,
+                row.isbn, row.print_issn, row.online_issn, row.uri, row.yop)
 
             # Do the insert and return the resultant row ID.
             sql = u"INSERT INTO title_report SET \
@@ -124,7 +105,7 @@ class TitleReportTable(CounterDb):
                 online_issn = %s, \
                 uri = %s, \
                 yop = %s, \
-                status = %s"
+                status = ''"
             cursor = CounterDb.conn.cursor()
             cursor.execute(sql, params)
             rowid = cursor.lastrowid
@@ -150,6 +131,24 @@ class MetricTable(CounterDb):
     def __init__(self):
         pass
 
+    def _is_duplicate(self, title_report_id, access_type, metric_type, period):
+        """
+        Check for duplicates.
+        """
+
+        sql = u"SELECT id FROM metric \
+            WHERE title_report_id = %s \
+            AND access_type = %s \
+            AND metric_type = %s \
+            AND period = %s"
+        params = (title_report_id, access_type, metric_type, period)
+        cursor = CounterDb.conn.cursor(named_tuple=True, buffered=True)
+        cursor.execute(sql, params)
+        row = cursor.fetchone()
+        cursor.close()
+
+        return (row is not None), row
+
     def insert(self, row, begin_date, end_date, rowid):
         """
         Inserts a row in the metric table. The row to insert must
@@ -170,23 +169,25 @@ class MetricTable(CounterDb):
             period = datetime.date(begin.year, m, 1).strftime('%Y-%m-%d')
             period_total = int(row[idx])
 
-            # Build the parameters list according to the type of report.
-            if row.report_id.startswith('TR'):
-                params = (rowid, self.ACCESS_TYPE.index(row.access_type),
-                    self.METRIC_TYPE.index(row.metric_type),
-                    period, period_total)
+            # Is this an update or an insert?
+            isdupe, id = self._is_duplicate(rowid, row.access_type, row.metric_type, period)
+            if isdupe:
+                sql = u"UPDATE metric \
+                    SET period_total = %s \
+                    WHERE id = %s"
+                params = (period_total, id.id)
             else:
-                params = (rowid, self.CONTROLLED, self.TOTAL_ITEM_REQUESTS,
-                    period, period_total)
-            
+                sql = u"INSERT INTO metric SET \
+                    id = NULL, \
+                    title_report_id = %s, \
+                    access_type = %s, \
+                    metric_type = %s, \
+                    period = %s, \
+                    period_total = %s"
+                params = (rowid, self.ACCESS_TYPE.index(row.access_type),
+                    self.METRIC_TYPE.index(row.metric_type), period, period_total)
+
             # Do the insert and return.
-            sql = u"INSERT INTO metric SET \
-                id = NULL, \
-                title_report_id = %s, \
-                access_type = %s, \
-                metric_type = %s, \
-                period = %s, \
-                period_total = %s"
             cursor = CounterDb.conn.cursor()
             cursor.execute(sql, params)
             CounterDb.conn.commit()
@@ -214,3 +215,37 @@ class PlatformTable(CounterDb):
         row = cursor.fetchone()
 
         return row[0]
+
+class ReportInventory(CounterDb):
+    """
+    Represents the spreadsheet inventory table.
+    """
+
+    def __init__(self):
+        pass
+
+    def is_loaded(self, report):
+        sql = u"SELECT platform, begin_date, end_date \
+            FROM report_inventory \
+            WHERE platform = %s \
+            AND begin_date = %s \
+            AND end_date = %s"
+        params = (report.platform, report.begin_date, report.end_date)
+        cursor = CounterDb.conn.cursor()
+        cursor.execute(sql, params)
+        return (cursor.fetchone() != None)
+
+    def insert(self, report):
+        sql = u"INSERT INTO report_inventory SET \
+            id = NULL, \
+            excel_name = %s, \
+            platform = %s, \
+            begin_date = %s, \
+            end_date = %s, \
+            row_cnt = %s, \
+            load_date = NOW()"
+        params = (report.filename, report.platform, report.begin_date,
+            report.end_date, len(report.data_rows()))
+        cursor = CounterDb.conn.cursor()
+        cursor.execute(sql, params)
+        CounterDb.conn.commit()

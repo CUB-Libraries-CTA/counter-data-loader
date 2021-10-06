@@ -15,16 +15,14 @@ class JR1Report:
     PERIODS = ['', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug',
         'sep', 'oct', 'nov', 'dec']
     MAX_ROWS = 1048576
-    MAX_COLS = 16384
-    HEADER_ROW = 8
     DATA_ROW_START = 10
-    DATA_COL_START = 1
 
     def __init__(self, workbook):
         self._workbook = openpyxl.load_workbook(filename=workbook, data_only=True)
         self._worksheet = self._workbook.active
         self._report_id = self._worksheet.cell(row=1, column=1).value
         self._reporting_period = self._worksheet.cell(row=5, column=1).value
+        self._platform = self._worksheet.cell(row=10, column=3).value
         self._filename = os.path.basename(workbook)
     
     @property
@@ -47,6 +45,10 @@ class JR1Report:
     def title_type(self):
         return 'J'
     
+    @property
+    def platform(self):
+        return self._platform
+    
     def _header_row(self):
         """
         Returns the header row
@@ -56,6 +58,10 @@ class JR1Report:
         on the reporting period. For a 12 month report, there will
         be 12 date columns (Jan - Dec).
 
+        To force compatibility with the R5 specification, additional
+        columns are introduced and are populated with empty strings
+        or predetermined values that are consistent for all JR1 reports.
+
         Note that the first two columns are not part of the report
         specification. They are included for later referencing
         when data is loaded into the database.
@@ -63,10 +69,9 @@ class JR1Report:
 
         # Start with non-date columns, which are static, and then
         # append the date column headings
-        header = ['report_id', 'title_type', 'title', 'publisher', 'platform',
-            'doi', 'proprietary_id', 'print_issn', 'online_issn',
-            'reporting_period_total', 'reporting_period_html',
-            'reporting_period_pdf']
+        header = ['report_id', 'title_type', 'title', 'publisher', 'publisher_id',
+            'platform', 'doi', 'proprietary_id', 'isbn', 'print_issn', 'online_issn',
+            'uri', 'yop', 'access_type', 'metric_type']
         start_month = int(self.begin_date.split('-')[1])
         end_month = int(self.end_date.split('-')[1])
         period_cols = self.PERIODS[start_month:end_month+1]
@@ -92,22 +97,6 @@ class JR1Report:
             
         return range(self.DATA_ROW_START, self.DATA_ROW_START + n)
     
-    def _data_cols(self):
-        """
-        Returns the number of data columns. The actual number of
-        columns depends on the reporting period.
-        """
-        
-        n = 0
-        for col in self._worksheet.iter_cols(min_row=self.HEADER_ROW,
-            min_col=self.DATA_COL_START, max_row=self.HEADER_ROW,
-            max_col=self.MAX_COLS, values_only=True):
-            if col[0] is None:
-                break
-            n += 1
-
-        return range(self.DATA_COL_START, self.DATA_COL_START + n)
-
     def get_row(self, n):
         """
         Returns a complete row of publication data for the given row number.
@@ -117,19 +106,28 @@ class JR1Report:
         months of usage data will have less or more list items, respectively.
         """
 
+        row = self._worksheet[n]
         row_spec = collections.namedtuple('ReportRow', self._header_row())
 
+        # Initialize the data row
         datarow = list()
         datarow.append(self.report_id)
         datarow.append(self.title_type)
-        for row in self._worksheet.iter_cols(min_row=n, min_col=self.DATA_COL_START,
-            max_row=n, max_col=len(self._data_cols()), values_only=True):
-            for cell in row:
-                if cell is None: # Check for empty cells
-                    datarow.append(None)
-                elif str(cell).isspace():
-                    datarow.append(None)
-                else:
-                    datarow.append(str(cell).strip())
-                            
+
+        # Append the remaining column data
+        i = 0
+        while i < len(row):
+            if i in (2, 5):
+                datarow.append('') # proprietary_id and isbn
+            if i == 7:
+                datarow.append('') # uri
+                datarow.append('') # yop
+                datarow.append('Controlled') # access_type 
+                datarow.append('Total_Item_Requests') # metric_type
+            datarow.append(str(row[i].value).strip())
+            i += 1
+        
+        # Remove the total columns that are not used
+        datarow = datarow[0:15] + datarow[18:]
+
         return row_spec._make(datarow)
