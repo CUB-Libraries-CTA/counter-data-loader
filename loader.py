@@ -53,8 +53,10 @@ if __name__ == "__main__":
                     # Update the report inventory.
                     inv.insert(report)
                     inv = None
-                    
                     report = None
+
+                    # Mark the file as processed.
+                    os.rename(f, f+'.processed')
                     
             except Exception as e:
                 write_error('{0}\n{1}'.format(f, traceback.format_exc()))

@@ -49,6 +49,10 @@ class JR1Report:
     def platform(self):
         return self._platform
     
+    @property
+    def row_count(self):
+        return len(self.data_rows())
+    
     def _header_row(self):
         """
         Returns the header row
@@ -118,13 +122,16 @@ class JR1Report:
         i = 0
         while i < len(row):
             if i in (2, 5):
-                datarow.append('') # proprietary_id and isbn
+                datarow.append('') # publisher_id and isbn
             if i == 7:
                 datarow.append('') # uri
                 datarow.append('') # yop
                 datarow.append('Controlled') # access_type 
                 datarow.append('Total_Item_Requests') # metric_type
-            datarow.append(str(row[i].value).strip())
+            if row[i].value is None:
+                datarow.append('')
+            else:
+                datarow.append(str(row[i].value).strip())
             i += 1
         
         # Remove the total columns that are not used

@@ -14,18 +14,16 @@ class TitleMasterReport:
 
     PERIODS = ['', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug',
         'sep', 'oct', 'nov', 'dec']
-    MAX_COLS = 16384
     MAX_ROWS = 1048576
-    HEADER_ROW = 14
     DATA_ROW_START = 15
-    DATA_COL_START = 1
 
     def __init__(self, workbook):
         self._workbook = openpyxl.load_workbook(filename=workbook, data_only=True)
         self._worksheet = self._workbook.active
-        self._filename = os.path.basename(workbook)
         self._report_id = self._worksheet.cell(row=2, column=2).value
         self._reporting_period = self._worksheet.cell(row=10, column=2).value
+        self._platform = self._worksheet.cell(row=15, column=4).value
+        self._filename = os.path.basename(workbook)
 
     @property
     def filename(self):
@@ -48,6 +46,10 @@ class TitleMasterReport:
     @property
     def title_type(self):
         return self.report_id[3:4]
+    
+    @property
+    def platform(self):
+        return self._platform
 
     def _header_row(self):
         """
@@ -55,11 +57,9 @@ class TitleMasterReport:
 
         The header row is constructed from two pieces:
 
-            - all the title identifying information
-            - the usage date columns
+            - all the title identifying information (incl isbn and yop)
+            - the usage period columns
 
-        The exact number of columns depends on the report (view) type. Book
-        reports include an ISBN and YOP while journal reports do not*. Also,
         Access_Type may be included in either report type, e.g., in TR_B3 and
         TR_J3.
 
@@ -69,22 +69,15 @@ class TitleMasterReport:
         run for any period, e.g., April to July. Therefore, the begin and
         end dates for the reporting period will determine which month columns
         to include in the header.
-
-        *The one exception is the TR_J4 report, which also has a YOP column.
-        However, there are no current plans to load this type of report so
-        this exception can be ignored.
         """
 
         # Build the title/book info columns by iterating through the spreadsheet
         # columns beginning with A (Title)
-        col = {'TR_J1': 11, 'TR_J3': 12, 'TR_B1': 13, 'TR_B3': 14}
-        header = ['report_id', 'title_type']
-        for row in self._worksheet.iter_cols(min_row=self.HEADER_ROW, min_col=1,
-            max_row=self.HEADER_ROW, max_col=col[self.report_id], values_only=True):
-            for cell in row:
-                header.append(cell.lower())
-
-        # Append the date columns
+        #col = {'TR_J1': 11, 'TR_J3': 12, 'TR_B1': 13, 'TR_B3': 14}
+        #header = ['report_id', 'title_type']
+        header = ['report_id', 'title_type', 'title', 'publisher', 'publisher_id',
+            'platform', 'doi', 'proprietary_id', 'isbn', 'print_issn', 'online_issn',
+            'uri', 'yop', 'access_type', 'metric_type']
         start_month = int(self.begin_date[5:7])
         end_month = int(self.end_date[5:7])
         period_cols = self.PERIODS[start_month:end_month+1]
@@ -133,19 +126,28 @@ class TitleMasterReport:
         intuitive referencing of columns during inserts and updates.
         """
 
+        row = self._worksheet[n]
         row_spec = collections.namedtuple('ReportRow', self._header_row())
 
+        # Initialize the data row
         datarow = list()
         datarow.append(self.report_id)
         datarow.append(self.title_type)
-        for row in self._worksheet.iter_cols(min_row=n, min_col=self.DATA_COL_START,
-            max_row=n, max_col=len(self._data_cols()), values_only=True):
-            for cell in row:
-                if cell is None: # Check for empty cells
-                    datarow.append(None)
-                elif str(cell).isspace():
-                    datarow.append(None)
-                else:
-                    datarow.append(str(cell).strip())
+
+        # Append the remaining column data
+        i = 0
+        while i < len(row):
+            if i == 6 and self.title_type == 'J':
+                datarow.append('') # isbn
+            if i == 9 and self.title_type == 'J':
+                datarow.append('') # yop
+            if row[i].value is None:
+                datarow.append('')
+            else:
+                datarow.append(str(row[i].value).strip())
+            i += 1
+
+        # Remove the total columns that are not used
+        datarow = datarow[0:15] + datarow[16:]
 
         return row_spec._make(datarow)

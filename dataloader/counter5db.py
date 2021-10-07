@@ -229,8 +229,9 @@ class ReportInventory(CounterDb):
             FROM report_inventory \
             WHERE platform = %s \
             AND begin_date = %s \
-            AND end_date = %s"
-        params = (report.platform, report.begin_date, report.end_date)
+            AND end_date = %s \
+            AND row_cnt = %s"
+        params = (report.platform, report.begin_date, report.end_date, report.row_count)
         cursor = CounterDb.conn.cursor()
         cursor.execute(sql, params)
         return (cursor.fetchone() != None)
