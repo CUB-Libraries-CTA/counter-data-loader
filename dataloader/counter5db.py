@@ -167,7 +167,7 @@ class MetricTable(CounterDb):
         for m in range(begin.month, end.month + 1):
             idx = row._fields.index(periods[m])
             period = datetime.date(begin.year, m, 1).strftime('%Y-%m-%d')
-            period_total = int(row[idx])
+            period_total = int(float(row[idx])) # float conversion deals with cases of '0.0'
 
             # Is this an update or an insert?
             isdupe, id = self._is_duplicate(rowid, row.access_type, row.metric_type, period)
