@@ -2,6 +2,7 @@ from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
 from dataloader.counter5db import TitleReportTable, MetricTable, ReportInventory
 import sys, os, glob
+import boto3
 import traceback
 
 def write_error(err_msg):
@@ -9,6 +10,12 @@ def write_error(err_msg):
     logfile.write(err_msg + '\n')
     logfile.close()
     
+def copy_to_s3(file):
+    key = 'counter-reports/{}'.format(os.path.basename(file))
+    s3 = boto3.client('s3')
+    with open(file, 'rb') as data:
+        s3.upload_fileobj(data, 'cubl-backup', key, ExtraArgs={'StorageClass': 'ONEZONE_IA'})
+
 if __name__ == "__main__":
 
     # Running this script requires a single argument representing
@@ -55,8 +62,10 @@ if __name__ == "__main__":
                     inv = None
                     report = None
 
-                    # Mark the file as processed.
-                    os.rename(f, f+'.processed')
+                    # Archive the processed file to AWS S3
+                    # and mark as processed.
+                    copy_to_s3(f)
+                    os.rename(f, f + '.processed')
                     
             except Exception as e:
                 write_error('{0}\n{1}'.format(f, traceback.format_exc()))
