@@ -55,7 +55,7 @@ class TitleReportTable(CounterDb):
         return (row is not None), row
     
     def _set_publisher(self, publisher):
-        if publisher is None or '???' in publisher:
+        if publisher is None or '???' in publisher or publisher == '':
             return 'Not Defined'
         else:
             return html.unescape(html.unescape(publisher))
@@ -118,9 +118,6 @@ class MetricTable(CounterDb):
     """
     Represents the metric table.
     """
-
-    CONTROLLED = 1
-    TOTAL_ITEM_REQUESTS = 2
 
     ACCESS_TYPE = ['', 'Controlled', 'OA_Gold', 'Other_Free_To_Read']
     METRIC_TYPE = ['', 'Total_Item_Investigations', 'Total_Item_Requests',

@@ -2,15 +2,6 @@ DROP DATABASE IF EXISTS counter5;
 CREATE DATABASE counter5 DEFAULT CHARACTER SET utf8mb4;
 USE counter5;
 
-CREATE TABLE platform_ref (
-    id INT NOT NULL,
-    alt_id INT NULL,
-    name VARCHAR(100) NOT NULL,
-    preferred_name VARCHAR(100) NOT NULL,
-    has_faq TINYINT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id)
-);
-
 CREATE TABLE title_report (
     id INT NOT NULL AUTO_INCREMENT,
     title VARCHAR(400) NOT NULL,
@@ -29,6 +20,7 @@ CREATE TABLE title_report (
     PRIMARY KEY (id),
     INDEX (title(50)),
     INDEX (publisher(50)),
+    INDEX (title(50), publisher(50), platform_id),
     FOREIGN KEY (platform_id) REFERENCES platform_ref (id)
 );
   
@@ -57,6 +49,27 @@ CREATE TABLE filter (
   updated_date DATETIME NOT NULL,
   owner VARCHAR(10) NOT NULL,
   PRIMARY KEY (id)
+);
+
+CREATE TABLE report_inventory (
+	id INT NOT NULL AUTO_INCREMENT,
+    excel_name VARCHAR(100) NOT NULL,
+    platform VARCHAR(100) NOT NULL,
+    begin_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    row_cnt INT NOT NULL,
+    load_date DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    INDEX (platform, begin_date, end_date)
+);
+
+CREATE TABLE platform_ref (
+    id INT NOT NULL,
+    alt_id INT NULL,
+    name VARCHAR(100) NOT NULL,
+    preferred_name VARCHAR(100) NOT NULL,
+    has_faq TINYINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE title_report_journal_mview (
