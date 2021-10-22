@@ -1,6 +1,7 @@
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
-from dataloader.counter5db import TitleReportTable, MetricTable, ReportInventory
+from dataloader.counter5db import TitleReportTable, MetricTable, ReportInventoryTable
+from dataloader.counter5db import MaterializedViews
 import sys, os, glob
 import boto3
 import traceback
@@ -44,7 +45,7 @@ if __name__ == "__main__":
                     report = TitleMasterReport(f)
                 
                 # Check if spreadsheet has already been loaded.
-                inv = ReportInventory()
+                inv = ReportInventoryTable()
                 is_loaded = inv.is_loaded(report)
                 if not is_loaded:
                     print(('Processing {}'.format(f)))
@@ -56,6 +57,12 @@ if __name__ == "__main__":
                         row = report.get_row(n)
                         rowid = trt.insert(row)
                         mt.insert(row, report.begin_date, report.end_date, rowid)
+                    
+                    # Update the appropriate mview.
+                    mv = MaterializedViews()
+                    begin_id = rowid - (report.row_count + 1)
+                    end_id = rowid
+                    mv.insert(report.title_type, begin_id, end_id)
                     
                     # Update the report inventory.
                     inv.insert(report)

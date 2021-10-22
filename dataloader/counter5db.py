@@ -10,7 +10,6 @@ class CounterDb:
     connection object for child tables. This class is never instantiated
     on its own.
     """
-    NOVALUE = ''
 
     conn = mysql.connector.connect(**dataloader.config.dbargs)
 
@@ -50,7 +49,6 @@ class TitleReportTable(CounterDb):
         cursor = CounterDb.conn.cursor(named_tuple=True, buffered=True)
         cursor.execute(sql, params)
         row = cursor.fetchone()
-        cursor.close()
 
         return (row is not None), row
     
@@ -110,7 +108,6 @@ class TitleReportTable(CounterDb):
             cursor.execute(sql, params)
             rowid = cursor.lastrowid
             CounterDb.conn.commit()
-            cursor.close()
 
         return rowid
 
@@ -142,7 +139,6 @@ class MetricTable(CounterDb):
         cursor = CounterDb.conn.cursor(named_tuple=True, buffered=True)
         cursor.execute(sql, params)
         row = cursor.fetchone()
-        cursor.close()
 
         return (row is not None), row
 
@@ -188,7 +184,6 @@ class MetricTable(CounterDb):
             cursor = CounterDb.conn.cursor()
             cursor.execute(sql, params)
             CounterDb.conn.commit()
-            cursor.close()
 
 class PlatformTable(CounterDb):
     """
@@ -213,7 +208,7 @@ class PlatformTable(CounterDb):
 
         return row[0]
 
-class ReportInventory(CounterDb):
+class ReportInventoryTable(CounterDb):
     """
     Represents the spreadsheet inventory table.
     """
@@ -231,7 +226,7 @@ class ReportInventory(CounterDb):
         params = (report.platform, report.begin_date, report.end_date, report.row_count)
         cursor = CounterDb.conn.cursor()
         cursor.execute(sql, params)
-        return (cursor.fetchone() != None)
+        return (cursor.fetchone() is not None)
 
     def insert(self, report):
         sql = u"INSERT INTO report_inventory SET \
@@ -246,4 +241,42 @@ class ReportInventory(CounterDb):
             report.end_date, len(report.data_rows()))
         cursor = CounterDb.conn.cursor()
         cursor.execute(sql, params)
+        CounterDb.conn.commit()
+
+class MaterializedViews(CounterDb):
+    """
+    Represents the materialized view tables (journals and books).
+    """
+
+    MVIEW = {'J': 'title_report_journal_mview',
+             'B': 'title_report_book_mview'}
+
+    def __init__(self):
+        pass
+
+    def insert(self, title_type, begin_id, end_id):
+        sql = u"INSERT INTO {0} SELECT \
+            t.id AS title_report_id, \
+            m.id AS metric_id, \
+            t.title AS title, \
+            t.title_type AS title_type, \
+            p.preferred_name AS platform, \
+            t.publisher AS publisher, \
+            t.doi AS doi, \
+            t.proprietary_id AS proprietary_id, \
+            t.print_issn AS print_issn, \
+            t.online_issn AS online_issn, \
+            t.uri AS uri, \
+            t.status AS status, \
+            m.access_type AS access_type, \
+            m.metric_type AS metric_type, \
+            m.period as period, \
+            m.period_total AS period_total \
+            FROM title_report t \
+            JOIN metric m ON m.title_report_id = t.id \
+            JOIN platform_ref p ON p.id = t.platform_id \
+            WHERE t.id BETWEEN {1} AND {2}".format(
+            self.MVIEW[title_type], begin_id, end_id)
+        cursor = CounterDb.conn.cursor()
+        cursor.execute(sql)
         CounterDb.conn.commit()
