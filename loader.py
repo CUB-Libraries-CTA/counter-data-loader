@@ -1,9 +1,7 @@
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
 from dataloader.counter5db import TitleReportTable, MetricTable, ReportInventoryTable
-from dataloader.counter5db import MaterializedViews
 import sys, os, glob
-import boto3
 import traceback
 
 def write_error(err_msg):
@@ -11,12 +9,6 @@ def write_error(err_msg):
     logfile.write(err_msg + '\n')
     logfile.close()
     
-def copy_to_s3(file):
-    key = 'counter-reports/{}'.format(os.path.basename(file))
-    s3 = boto3.client('s3')
-    with open(file, 'rb') as data:
-        s3.upload_fileobj(data, 'cubl-backup', key, ExtraArgs={'StorageClass': 'ONEZONE_IA'})
-
 if __name__ == "__main__":
 
     # Running this script requires a single argument representing
@@ -58,20 +50,12 @@ if __name__ == "__main__":
                         rowid = trt.insert(row)
                         mt.insert(row, report.begin_date, report.end_date, rowid)
                     
-                    # Update the appropriate mview.
-                    mv = MaterializedViews()
-                    begin_id = rowid - (report.row_count + 1)
-                    end_id = rowid
-                    mv.insert(report.title_type, begin_id, end_id)
-                    
                     # Update the report inventory.
                     inv.insert(report)
                     inv = None
                     report = None
 
-                    # Archive the processed file to AWS S3
-                    # and mark as processed.
-                    copy_to_s3(f)
+                    # Mark as processed.
                     os.rename(f, f + '.processed')
                     
             except Exception as e:

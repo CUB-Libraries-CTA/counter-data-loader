@@ -12,7 +12,7 @@ CREATE TABLE platform_ref (
 );
 
 CREATE TABLE title_report (
-    id INT NOT NULL AUTO_INCREMENT,
+    id INT AUTO_INCREMENT,
     title VARCHAR(400) NOT NULL,
     title_type CHAR(1) NOT NULL,
     publisher VARCHAR(200) NULL,
@@ -34,7 +34,7 @@ CREATE TABLE title_report (
 );
   
 CREATE TABLE metric (
-    id INT NOT NULL AUTO_INCREMENT,
+    id INT AUTO_INCREMENT,
     title_report_id INT NOT NULL,
     access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read') DEFAULT NULL,
     metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
@@ -49,7 +49,7 @@ CREATE TABLE metric (
 );
 
 CREATE TABLE filter (
-  id INT NOT NULL AUTO_INCREMENT,
+  id INT AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL,
   description VARCHAR(250) DEFAULT NULL,
   params VARCHAR(500) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE filter (
 );
 
 CREATE TABLE report_inventory (
-	id INT NOT NULL AUTO_INCREMENT,
+	id INT AUTO_INCREMENT,
     excel_name VARCHAR(100) NOT NULL,
     platform VARCHAR(100) NOT NULL,
     begin_date DATE NOT NULL,
@@ -127,3 +127,63 @@ CREATE TABLE title_report_book_mview (
     INDEX (period),
     PRIMARY KEY (id)
 );
+
+CREATE VIEW title_report_journal_view AS
+	SELECT
+		t.id AS title_report_id,
+		m.id AS metric_id,
+		t.title,
+		t.title_type,
+		p.preferred_name AS platform,
+		t.publisher,
+		t.doi,
+		t.proprietary_id,
+		t.print_issn,
+		t.online_issn,
+		t.uri,
+		m.access_type,
+		m.metric_type,
+		m.period,
+		m.period_total
+    FROM
+        title_report t
+    JOIN
+        metric m ON m.title_report_id = t.id
+    JOIN
+        platform_ref p ON p.id = t.platform_id
+    WHERE
+        t.title_type = 'J'
+    ORDER BY
+        m.period_total DESC,
+        m.period ASC,
+        t.title ASC;
+
+CREATE VIEW title_report_book_view AS
+	SELECT
+		t.id AS title_report_id,
+		m.id AS metric_id,
+		t.title,
+		t.title_type,
+		p.preferred_name AS platform,
+		t.publisher,
+		t.doi,
+		t.proprietary_id,
+		t.print_issn,
+		t.online_issn,
+		t.uri,
+		m.access_type,
+		m.metric_type,
+		m.period,
+		m.period_total
+    FROM
+        title_report t
+    JOIN
+        metric m ON m.title_report_id = t.id
+    JOIN
+        platform_ref p ON p.id = t.platform_id
+    WHERE
+        t.title_type = 'B'
+    ORDER BY
+        m.period_total DESC,
+        m.period ASC,
+        t.title ASC;

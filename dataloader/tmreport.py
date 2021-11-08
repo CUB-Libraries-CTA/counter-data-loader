@@ -51,6 +51,10 @@ class TitleMasterReport:
     def platform(self):
         return self._platform
 
+    @property
+    def row_count(self):
+        return len(self.data_rows())
+    
     def _header_row(self):
         """
         Returns the report header row (column names).
