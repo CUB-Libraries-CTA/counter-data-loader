@@ -1,4 +1,4 @@
--- Loads the view tables (materialized views)
+-- Loads the journal view table (materialized view)
 --
 -- The materialized views provide improved performance
 -- when filtering data from the database.
@@ -19,7 +19,6 @@ INSERT INTO title_report_journal_mview
         t.print_issn AS print_issn,
         t.online_issn AS online_issn,
         t.uri AS uri,
-        t.status AS status,
         m.access_type AS access_type,
         m.metric_type AS metric_type,
         m.period as period,

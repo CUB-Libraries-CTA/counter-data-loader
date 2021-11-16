@@ -42,6 +42,10 @@ class TitleMasterReport:
     def end_date(self):
         kv_pair = self._reporting_period.split(';')[1]
         return kv_pair.split('=')[1]
+    
+    @property
+    def run_date(self):
+        return self._worksheet.cell(row=11, column=2).value
 
     @property
     def title_type(self):

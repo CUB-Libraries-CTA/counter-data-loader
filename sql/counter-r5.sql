@@ -25,9 +25,11 @@ CREATE TABLE title_report (
     online_issn VARCHAR(15) NULL,
     uri VARCHAR(200) NULL,
     yop VARCHAR(4) NULL,
-    status CHAR(1) NULL,
+    create_date DATETIME NOT NULL,
+    update_date DATETIME NOT NULL,
     PRIMARY KEY (id),
     INDEX (title(50)),
+    INDEX (title_type),
     INDEX (publisher(50)),
     INDEX (title(50), publisher(50), platform_id),
     FOREIGN KEY (platform_id) REFERENCES platform_ref (id)
@@ -42,6 +44,8 @@ CREATE TABLE metric (
         'No_License') DEFAULT NULL,
     period DATE NOT NULL,
     period_total INT NOT NULL DEFAULT 0,
+    create_date DATETIME NOT NULL,
+    update_date DATETIME NOT NULL,
     PRIMARY KEY (id),
     INDEX (period),
     INDEX (title_report_id ASC),
@@ -54,8 +58,8 @@ CREATE TABLE filter (
   description VARCHAR(250) DEFAULT NULL,
   params VARCHAR(500) NOT NULL,
   title_type CHAR(1) NOT NULL,
-  created_date DATETIME NOT NULL,
-  updated_date DATETIME NOT NULL,
+  create_date DATETIME NOT NULL,
+  update_date DATETIME NOT NULL,
   owner VARCHAR(10) NOT NULL,
   PRIMARY KEY (id)
 );
@@ -85,7 +89,6 @@ CREATE TABLE title_report_journal_mview (
     print_issn VARCHAR(15),
     online_issn VARCHAR(15),
     uri VARCHAR(200),
-    status CHAR(1),
     access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
     metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
         'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
@@ -114,7 +117,6 @@ CREATE TABLE title_report_book_mview (
     online_issn VARCHAR(15),
     uri VARCHAR(200),
     yop VARCHAR(4),
-    status CHAR(1),
     access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
     metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
         'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
@@ -127,63 +129,3 @@ CREATE TABLE title_report_book_mview (
     INDEX (period),
     PRIMARY KEY (id)
 );
-
-CREATE VIEW title_report_journal_view AS
-	SELECT
-		t.id AS title_report_id,
-		m.id AS metric_id,
-		t.title,
-		t.title_type,
-		p.preferred_name AS platform,
-		t.publisher,
-		t.doi,
-		t.proprietary_id,
-		t.print_issn,
-		t.online_issn,
-		t.uri,
-		m.access_type,
-		m.metric_type,
-		m.period,
-		m.period_total
-    FROM
-        title_report t
-    JOIN
-        metric m ON m.title_report_id = t.id
-    JOIN
-        platform_ref p ON p.id = t.platform_id
-    WHERE
-        t.title_type = 'J'
-    ORDER BY
-        m.period_total DESC,
-        m.period ASC,
-        t.title ASC;
-
-CREATE VIEW title_report_book_view AS
-	SELECT
-		t.id AS title_report_id,
-		m.id AS metric_id,
-		t.title,
-		t.title_type,
-		p.preferred_name AS platform,
-		t.publisher,
-		t.doi,
-		t.proprietary_id,
-		t.print_issn,
-		t.online_issn,
-		t.uri,
-		m.access_type,
-		m.metric_type,
-		m.period,
-		m.period_total
-    FROM
-        title_report t
-    JOIN
-        metric m ON m.title_report_id = t.id
-    JOIN
-        platform_ref p ON p.id = t.platform_id
-    WHERE
-        t.title_type = 'B'
-    ORDER BY
-        m.period_total DESC,
-        m.period ASC,
-        t.title ASC;

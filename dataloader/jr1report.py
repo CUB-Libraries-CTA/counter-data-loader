@@ -42,6 +42,10 @@ class JR1Report:
         return self._reporting_period.split('to')[1].strip()
     
     @property
+    def run_date(self):
+        return self._worksheet.cell(row=7, column=1).value
+    
+    @property
     def title_type(self):
         return 'J'
     

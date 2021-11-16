@@ -27,28 +27,29 @@ if __name__ == "__main__":
         # next report.
         reportdir = sys.argv[1]
         files = glob.glob('{}/*.xlsx'.format(reportdir))
+        print('Processing {} files:'.format(len(files)))
         for f in files:
             try:
 
                 # Run through the load routines sequentially.
-                if os.path.basename(f).startswith('JR'):
+                if os.path.basename(f).startswith('jr'):
                     report = JR1Report(f)
-                if os.path.basename(f).startswith('TR'):
+                if os.path.basename(f).startswith('tr'):
                     report = TitleMasterReport(f)
                 
                 # Check if spreadsheet has already been loaded.
                 inv = ReportInventoryTable()
                 is_loaded = inv.is_loaded(report)
                 if not is_loaded:
-                    print(('Processing {}'.format(f)))
+                    print(os.path.basename(f))
 
                     # Process the data in the spreadsheet.
                     trt = TitleReportTable()
                     mt = MetricTable()
                     for n in report.data_rows():
                         row = report.get_row(n)
-                        rowid = trt.insert(row)
-                        mt.insert(row, report.begin_date, report.end_date, rowid)
+                        rowid = trt.insert(row, report.run_date)
+                        mt.insert(row, rowid, report.begin_date, report.end_date, report.run_date)
                     
                     # Update the report inventory.
                     inv.insert(report)

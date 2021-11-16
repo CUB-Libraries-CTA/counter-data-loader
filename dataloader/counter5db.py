@@ -2,7 +2,7 @@ import mysql.connector
 import dataloader.config
 import html
 import datetime
-from datetime import date
+from datetime import datetime
 
 class CounterDb:
     """
@@ -38,6 +38,9 @@ class TitleReportTable(CounterDb):
         a new row will be inserted in the table. However, this has no impact
         on determining usage for a specific title as both records will
         be combined to provide a total usage when filtering by title alone.
+
+        Returns the cursor fetch result, which will be None or a 1-element tuple
+        containing the id of the duplicate row.
         """
 
         platform = PlatformTable()
@@ -50,43 +53,41 @@ class TitleReportTable(CounterDb):
         cursor.execute(sql, params)
         row = cursor.fetchone()
 
-        return (row is not None), row
+        return row
     
     def _set_publisher(self, publisher):
+        """
+        Sets the publisher name to Not Defined in select cases. HTML
+        entities are also unescaped in the publisher name.
+        """
+
         if publisher is None or '???' in publisher or publisher == '':
             return 'Not Defined'
         else:
             return html.unescape(html.unescape(publisher))
     
     def _set_title(self, title):
+        """
+        Unescapes HTML entities in the title name.
+        """
+
         return html.unescape(html.unescape(title))
 
-    def insert(self, row):
+    def insert(self, row, run_date):
         """
-        Inserts a row in the title_report table.
+        Inserts a row in the title_report table. Returns the id
+        of the inserted row.
         """
 
         # If the title/publisher/platform combination already exists in this
         # table, then we only need the rowid to insert metric data.
-        isdupe, id = self._is_duplicate(row)
-        if isdupe:
-            rowid = id.id
+        dupe = self._is_duplicate(row)
+        if dupe:
+            rowid = dupe.id
         
         # If the row is not a duplicate, then proceed with assigning parameter
         # values, which depends on whether this is R4 or R5 data.
         else:
-
-            # Check for blanks, fill characters, HTML entities in publisher and
-            # title fields.
-            publisher = self._set_publisher(row.publisher)
-            title = self._set_title(row.title)
-
-            # The parameter list is different for J1 and TR reports This requires
-            # a check of the report ID first before building the parameter list.
-            platform = PlatformTable()
-            params = (title, row.title_type, publisher, row.publisher_id,
-                platform.get_platform_id(row.platform), row.doi, row.proprietary_id,
-                row.isbn, row.print_issn, row.online_issn, row.uri, row.yop)
 
             # Do the insert and return the resultant row ID.
             sql = u"INSERT INTO title_report SET \
@@ -103,7 +104,18 @@ class TitleReportTable(CounterDb):
                 online_issn = %s, \
                 uri = %s, \
                 yop = %s, \
-                status = ''"
+                create_date = %s, \
+                update_date = %s"
+
+            # Build the SQL parameter list and execute.
+            platform = PlatformTable()
+            platform_id = platform.get_platform_id(row.platform)
+            publisher = self._set_publisher(row.publisher)
+            title = self._set_title(row.title)
+            create_date = datetime.fromisoformat(run_date.replace('Z','+06:00'))
+            params = (title, row.title_type, publisher, row.publisher_id,
+                platform_id, row.doi, row.proprietary_id, row.isbn, row.print_issn,
+                row.online_issn, row.uri, row.yop, create_date, create_date)
             cursor = CounterDb.conn.cursor()
             cursor.execute(sql, params)
             rowid = cursor.lastrowid
@@ -122,12 +134,18 @@ class MetricTable(CounterDb):
         'Unique_Title_Investigations', 'Unique_Title_Requests',
         'Limit_Exceeded', 'No_License']
 
+    PERIODS = ['', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug',
+        'sep', 'oct', 'nov', 'dec']
+
     def __init__(self):
         pass
 
     def _is_duplicate(self, title_report_id, access_type, metric_type, period):
         """
-        Check for duplicates.
+        Checks for duplicate rows for the given title report id.
+
+        Returns the cursor fetch result, which will be None or a 1-element tuple
+        containing the id of the duplicate row.
         """
 
         sql = u"SELECT id FROM metric \
@@ -140,35 +158,35 @@ class MetricTable(CounterDb):
         cursor.execute(sql, params)
         row = cursor.fetchone()
 
-        return (row is not None), row
+        return row
 
-    def insert(self, row, begin_date, end_date, rowid):
+    def insert(self, row, rowid, begin_date, end_date, run_date):
         """
         Inserts a row in the metric table. The row to insert must
         have a corresponding title entry (journal or book).
         """
         
         # Build date and period information needed for each row
-        begin = date.fromisoformat(begin_date)
-        end = date.fromisoformat(end_date)
-        periods = ['', 'jan', 'feb', 'mar', 'apr', 'may', 'jun',
-            'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        report_begin = datetime.fromisoformat(begin_date)
+        report_end = datetime.fromisoformat(end_date)
+        create_date = datetime.fromisoformat(run_date.replace('Z','+06:00'))
         
         # A row will be inserted for each month column in the source
         # spreadsheet. The actual number of months is determined from
-        # start and end dates contained in the report header.
-        for m in range(begin.month, end.month + 1):
-            idx = row._fields.index(periods[m])
-            period = datetime.date(begin.year, m, 1).strftime('%Y-%m-%d')
-            period_total = int(float(row[idx])) # float conversion deals with cases of '0.0'
+        # the start and end dates contained in the report header.
+        for i in range(report_begin.month, report_end.month + 1):
+            ndx = row._fields.index(self.PERIODS[i])
+            period = datetime(report_begin.year, i, 1).strftime('%Y-%m-%d')
+            period_total = int(float(row[ndx])) # float conversion deals with cases of '0.0'
 
             # Is this an update or an insert?
-            isdupe, id = self._is_duplicate(rowid, row.access_type, row.metric_type, period)
-            if isdupe:
-                sql = u"UPDATE metric \
-                    SET period_total = %s \
+            dupe = self._is_duplicate(rowid, row.access_type, row.metric_type, period)
+            if dupe:
+                sql = u"UPDATE metric SET \
+                    period_total = %s, \
+                    update_date = NOW() \
                     WHERE id = %s"
-                params = (period_total, id.id)
+                params = (period_total, dupe.id)
             else:
                 sql = u"INSERT INTO metric SET \
                     id = NULL, \
@@ -176,9 +194,12 @@ class MetricTable(CounterDb):
                     access_type = %s, \
                     metric_type = %s, \
                     period = %s, \
-                    period_total = %s"
+                    period_total = %s, \
+                    create_date = %s, \
+                    update_date = %s"
                 params = (rowid, self.ACCESS_TYPE.index(row.access_type),
-                    self.METRIC_TYPE.index(row.metric_type), period, period_total)
+                    self.METRIC_TYPE.index(row.metric_type), period, period_total,
+                    create_date, create_date)
 
             # Do the insert and return.
             cursor = CounterDb.conn.cursor()
@@ -195,9 +216,9 @@ class PlatformTable(CounterDb):
 
     def get_platform_id(self, name):
         """
-        Gets the corresponding ID for a given platform name. Both the name
-        and alias columns need to be checked. If the platform name is found,
-        the ID will be returned; otherwise, the return value will be None.
+        Returns the corresponding ID for a given platform name. If the
+        platform name is found, the ID will be returned; otherwise,
+        the return value will be None.
         """
 
         params = (name,)
@@ -217,6 +238,10 @@ class ReportInventoryTable(CounterDb):
         pass
 
     def is_loaded(self, report):
+        """
+        Checks to see if the report has already been loaded.
+        """
+
         sql = u"SELECT platform, begin_date, end_date \
             FROM report_inventory \
             WHERE platform = %s \
@@ -226,9 +251,15 @@ class ReportInventoryTable(CounterDb):
         params = (report.platform, report.begin_date, report.end_date, report.row_count)
         cursor = CounterDb.conn.cursor()
         cursor.execute(sql, params)
-        return (cursor.fetchone() is not None)
+        row = cursor.fetchone()
+
+        return (row is not None)
 
     def insert(self, report):
+        """
+        Inserts the report details into the inventory table.
+        """
+        
         sql = u"INSERT INTO report_inventory SET \
             id = NULL, \
             excel_name = %s, \
