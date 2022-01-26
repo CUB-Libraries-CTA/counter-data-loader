@@ -1,6 +1,7 @@
 import openpyxl
 import collections
-import os
+import os, csv
+from datetime import datetime
 
 class JR1Report:
     """
@@ -18,10 +19,11 @@ class JR1Report:
     DATA_ROW_START = 10
 
     def __init__(self, workbook):
-        self._workbook = openpyxl.load_workbook(filename=workbook, data_only=True)
+        self._workbook = openpyxl.load_workbook(filename=workbook, data_only=True, read_only=True)
         self._worksheet = self._workbook.active
         self._report_id = self._worksheet.cell(row=1, column=1).value
         self._reporting_period = self._worksheet.cell(row=5, column=1).value
+        self._run_date = self._worksheet.cell(row=7, column=1).value
         self._platform = self._worksheet.cell(row=10, column=3).value
         self._filename = os.path.basename(workbook)
     
@@ -43,7 +45,10 @@ class JR1Report:
     
     @property
     def run_date(self):
-        return self._worksheet.cell(row=7, column=1).value
+        if self._run_date is None:
+            return '0000-00-00'
+        else:
+            return str(self._run_date)[0:10]
     
     @property
     def title_type(self):
@@ -57,6 +62,9 @@ class JR1Report:
     def row_count(self):
         return len(self.data_rows())
     
+    def close(self):
+        self._workbook.close()
+
     def _header_row(self):
         """
         Returns the header row
@@ -104,7 +112,7 @@ class JR1Report:
             n += 1
             
         return range(self.DATA_ROW_START, self.DATA_ROW_START + n)
-    
+
     def get_row(self, n):
         """
         Returns a complete row of publication data for the given row number.
@@ -142,3 +150,77 @@ class JR1Report:
         datarow = datarow[0:15] + datarow[18:]
 
         return row_spec._make(datarow)
+    
+    def export(self, dir):
+        """
+        Makes text files of the raw spreadsheet data for bulk import into the DB.
+        """
+        # Start with titles
+        with open('{0}/title_report_temp'.format(dir), 'w', newline='', encoding='utf-8') as csvfile:
+            csvwriter = csv.writer(csvfile, dialect='excel-tab', lineterminator='\n')
+        
+            # Iterate through the spreadsheet rows starting at the first data row (row 10).
+            datarows = self.data_rows()
+            row_num = min(datarows)
+            for row in self._worksheet.iter_rows(min_row=min(datarows), min_col=1, max_row=max(datarows), max_col=7):
+                # Start building a list of field values. The actual fields and their sequence
+                # must correspond to the title_report_temp table. See schema for details.
+                datarow = list()
+                datarow.append('null') # id
+                i = 0
+                while i <= len(row):
+                    if i == 1:
+                        datarow.append(self.title_type) # title_type
+                    if i == 2:
+                        datarow.append('') # publisher_id
+                    if i == 5:
+                        datarow.append('') # isbn
+                    if i == 7:
+                        datarow.append('') # uri
+                        datarow.append('') # yop
+                        break
+                    if row[i].value is None:
+                        datarow.append('')
+                    else:
+                        datarow.append(str(row[i].value).strip())
+                    i += 1
+                datarow.append(self.filename) # excel_name
+                datarow.append(row_num) # row_num
+                datarow.append(0) # title_report_id
+                csvwriter.writerow(datarow)
+                row_num += 1
+
+        # Export metrics
+        with open('{0}/metric_temp'.format(dir), 'w', newline='', encoding='utf-8') as csvfile:
+            csvwriter = csv.writer(csvfile, dialect='excel-tab', lineterminator='\n')
+
+            report_begin = datetime.fromisoformat(self.begin_date)
+            report_end = datetime.fromisoformat(self.end_date)
+
+            # Iterate through the spreadsheet rows starting at the first data row (row 10).
+            datarows = self.data_rows()
+            row_num = min(datarows)
+            for row in self._worksheet.iter_rows(min_row=min(datarows), min_col=11, max_row=max(datarows), max_col=report_end.month+10):
+
+                # A row will be inserted for each month column in the source
+                # spreadsheet. The actual number of months is determined from
+                # the start and end dates contained in the report header.
+                n = 0
+                for i in range(report_begin.month, report_end.month + 1):
+                    period = datetime(report_begin.year, i, 1).strftime('%Y-%m-%d')
+                    period_total = int(float(row[n].value)) # float conversion deals with cases of '0.0'
+
+                    # Start building a list of field values. The actual fields and their sequence
+                    # must correspond to the title_report_temp table. See schema for details.
+                    datarow = list()
+                    datarow.append('null') # id
+                    datarow.append(0) # title_report_id
+                    datarow.append(1) # access_type --> defaults to Controlled
+                    datarow.append(2) # metric_type --> defaults to Total_Item_Requests
+                    datarow.append(period)
+                    datarow.append(period_total)
+                    datarow.append(self.filename)
+                    datarow.append(row_num)
+                    csvwriter.writerow(datarow)
+                    n += 1
+                row_num += 1

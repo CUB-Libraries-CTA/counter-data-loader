@@ -1,11 +1,13 @@
+from datetime import datetime
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
-from dataloader.counter5db import TitleReportTable, MetricTable, ReportInventoryTable
+from dataloader.counter5db import BulkImport, TitleReportTable, MetricTable, ReportInventoryTable
 import sys, os, glob
 import traceback
 
 def write_error(err_msg):
     logfile = open('errors.log', 'at')
+    logfile.write(datetime.now().isoformat() + '\n')
     logfile.write(err_msg + '\n')
     logfile.close()
     
@@ -19,15 +21,19 @@ if __name__ == "__main__":
     # of the main database tables will be loaded in sequence to
     # ensure dependencies are maintained.
     if len(sys.argv) == 1:
-        print('Usage: python loader.py <report directory>')
+        print('Usage: python loader.py <report directory> <year>')
     else:
         
         # Begin processing individual reports. If something 
         # goes wrong, write a log entry and move on to the
         # next report.
         reportdir = sys.argv[1]
-        files = glob.glob('{}/*.xlsx'.format(reportdir))
-        print('Processing {} files:'.format(len(files)))
+        reportyr = sys.argv[2]
+        files = glob.glob('{0}/*{1}*.xlsx'.format(reportdir, reportyr))
+        files.sort()
+        trt = TitleReportTable()
+        mt = MetricTable()
+        inv = ReportInventoryTable()
         for f in files:
             try:
 
@@ -38,26 +44,24 @@ if __name__ == "__main__":
                     report = TitleMasterReport(f)
                 
                 # Check if spreadsheet has already been loaded.
-                inv = ReportInventoryTable()
                 is_loaded = inv.is_loaded(report)
                 if not is_loaded:
                     print(os.path.basename(f))
 
                     # Process the data in the spreadsheet.
-                    trt = TitleReportTable()
-                    mt = MetricTable()
-                    for n in report.data_rows():
-                        row = report.get_row(n)
-                        rowid = trt.insert(row, report.run_date)
-                        mt.insert(row, rowid, report.begin_date, report.end_date, report.run_date)
+                    load_start = datetime.now().isoformat()
+                    report.export(reportdir)
+                    bi = BulkImport(reportdir)
+                    bi.import_all()
+                    trt.insert_from_temp()
+                    mt.insert_from_temp()
+                    load_end = datetime.now().isoformat()
                     
                     # Update the report inventory.
-                    inv.insert(report)
-                    inv = None
-                    report = None
+                    inv.insert(report, load_start, load_end)
 
-                    # Mark as processed.
-                    os.rename(f, f + '.processed')
+                    # Clean up.
+                    report.close()
                     
             except Exception as e:
                 write_error('{0}\n{1}'.format(f, traceback.format_exc()))

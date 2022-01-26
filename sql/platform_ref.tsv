@@ -40,9 +40,9 @@ id	name	preferred_name	has_faq
 39	ingentaconnect	IngentaConnect	0
 40	IOPscience	IOPscience	0
 41	Ithaka	JSTOR	0
-42	J-STAGE	"Japan Science and Technology Information Aggregator, Electronic (J-STAGE)"	0
+42	J-STAGE	Japan Science and Technology Information Aggregator, Electronic (J-STAGE)	0
 43	library.cqpress.com	CQ Press Library	0
-44	"Mary Ann Liebert, Inc. Online Customer Support"	Mary Ann Liebert	0
+44	Mary Ann Liebert, Inc. Online Customer Support	Mary Ann Liebert	0
 45	MIT Press Journals	MIT Press Journals	0
 46	Morgan & Claypool	Morgan & Claypool	0
 47	nature.com	Nature	0
@@ -93,7 +93,7 @@ id	name	preferred_name	has_faq
 92	JSTOR	JSTOR	0
 93	Taylor & Francis Online	Taylor & Francis	0
 94	The Regents of the University of California. All Rights Reserved.	University of California	0
-95	AMetSoc	American Meteorlogical Society (AMS)	0
+95	AMetSoc	American Meteorological Society (AMS)	0
 96	Duke University Press	Duke University Press	0
 97	SciAm	Scientific American	0
 98	SN:ResearchGate	SpringerNature	0
@@ -123,4 +123,7 @@ id	name	preferred_name	has_faq
 122	connect	IngentaConnect	0
 123	BloomsburyFashionCentral	Highwire Press	0
 124	SAGE Knowledge	SAGE Knowledge	0
-
+125	Taylor & Francis eBooks	Taylor & Francis	0
+126	DP	Begell House	0
+127	Gale	Gale	0
+128	The MIT Press	Silverchair	0

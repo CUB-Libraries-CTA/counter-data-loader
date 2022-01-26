@@ -1,5 +1,7 @@
 reports/
 scripts/
+util/
+test/
 dataloader/config.py
 *.log
 *.pyc

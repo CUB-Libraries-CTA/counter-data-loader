@@ -4,11 +4,11 @@ USE counter5;
 
 CREATE TABLE platform_ref (
     id INT NOT NULL,
-    alt_id INT NULL,
     name VARCHAR(100) NOT NULL,
     preferred_name VARCHAR(100) NOT NULL,
     has_faq TINYINT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    INDEX (preferred_name)
 );
 
 CREATE TABLE title_report (
@@ -19,113 +19,97 @@ CREATE TABLE title_report (
     publisher_id VARCHAR(50) NULL,
     platform_id INT NOT NULL,
     doi VARCHAR(100) NULL,
-    proprietary_id VARCHAR(100) NULL,
+    proprietary_id VARCHAR(200) NULL,
     isbn VARCHAR(20) NULL,
-    print_issn VARCHAR(15) NULL,
-    online_issn VARCHAR(15) NULL,
+    print_issn VARCHAR(20) NULL,
+    online_issn VARCHAR(20) NULL,
     uri VARCHAR(200) NULL,
     yop VARCHAR(4) NULL,
-    create_date DATETIME NOT NULL,
-    update_date DATETIME NOT NULL,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX (title(50)),
     INDEX (title_type),
-    INDEX (publisher(50)),
-    INDEX (title(50), publisher(50), platform_id),
+    INDEX (platform_id),
+    INDEX (title_type, id),
+    INDEX (title(10), publisher(10), platform_id, isbn, yop),
     FOREIGN KEY (platform_id) REFERENCES platform_ref (id)
 );
-  
+
+CREATE TABLE title_report_temp (
+    id INT AUTO_INCREMENT,
+    title VARCHAR(400),
+    title_type CHAR(1),
+    publisher VARCHAR(200),
+    publisher_id VARCHAR(50),
+    platform VARCHAR(100),
+    doi VARCHAR(100),
+    proprietary_id VARCHAR(200),
+    isbn VARCHAR(20),
+    print_issn VARCHAR(20),
+    online_issn VARCHAR(20),
+    uri VARCHAR(200),
+    yop VARCHAR(4),
+    excel_name VARCHAR(100),
+    row_num INT,
+    title_report_id INT,
+    PRIMARY KEY (id),
+    INDEX (title(10), publisher(10), proprietary_id, isbn, yop),
+    INDEX (excel_name, row_num)
+);
+
 CREATE TABLE metric (
     id INT AUTO_INCREMENT,
     title_report_id INT NOT NULL,
-    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read') DEFAULT NULL,
+    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read') NOT NULL,
     metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
         'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
-        'No_License') DEFAULT NULL,
+        'No_License') NOT NULL,
     period DATE NOT NULL,
     period_total INT NOT NULL DEFAULT 0,
-    create_date DATETIME NOT NULL,
-    update_date DATETIME NOT NULL,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX (period),
-    INDEX (title_report_id ASC),
+    INDEX (title_report_id),
+    INDEX (title_report_id, period),
+    INDEX (title_report_id, access_type, metric_type, period),
     FOREIGN KEY (title_report_id) REFERENCES title_report (id)
 );
 
+CREATE TABLE metric_temp (
+    id INT AUTO_INCREMENT,
+    title_report_id INT,
+    access_type INT,
+    metric_type INT,
+    period DATE,
+    period_total INT,
+    excel_name VARCHAR(100),
+    row_num INT,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE filter (
-  id INT AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL,
-  description VARCHAR(250) DEFAULT NULL,
-  params VARCHAR(500) NOT NULL,
-  title_type CHAR(1) NOT NULL,
-  create_date DATETIME NOT NULL,
-  update_date DATETIME NOT NULL,
-  owner VARCHAR(10) NOT NULL,
-  PRIMARY KEY (id)
+    id INT AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description VARCHAR(250) DEFAULT NULL,
+    params VARCHAR(500) NOT NULL,
+    title_type CHAR(1) NOT NULL,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    owner VARCHAR(10) NOT NULL,
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE report_inventory (
 	id INT AUTO_INCREMENT,
     excel_name VARCHAR(100) NOT NULL,
     platform VARCHAR(100) NOT NULL,
+    run_date DATE NOT NULL,
     begin_date DATE NOT NULL,
     end_date DATE NOT NULL,
     row_cnt INT NOT NULL,
-    load_date DATETIME NOT NULL,
+    load_start DATETIME NOT NULL,
+    load_end DATETIME NOT NULL,
+    load_date DATE NOT NULL,
     PRIMARY KEY (id),
     INDEX (platform, begin_date, end_date)
-);
-
-CREATE TABLE title_report_journal_mview (
-    id INT AUTO_INCREMENT,
-    title_report_id INT,
-    metric_id INT,
-    title VARCHAR(400),
-    title_type CHAR(1),
-    platform VARCHAR(100),
-    publisher VARCHAR(200),
-    doi VARCHAR(100),
-    proprietary_id VARCHAR(100),
-    print_issn VARCHAR(15),
-    online_issn VARCHAR(15),
-    uri VARCHAR(200),
-    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
-    metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
-        'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
-        'No_License'),
-    period DATE,
-    period_total INT,
-    INDEX (title_report_id),
-    INDEX (platform),
-    INDEX (publisher),
-    INDEX (period),
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE title_report_book_mview (
-    id INT AUTO_INCREMENT,
-    title_report_id INT,
-    metric_id INT,
-    title VARCHAR(400),
-    title_type CHAR(1),
-    platform VARCHAR(100),
-    publisher VARCHAR(200),
-    doi VARCHAR(100),
-    proprietary_id VARCHAR(100),
-    isbn VARCHAR(20),
-    print_issn VARCHAR(15),
-    online_issn VARCHAR(15),
-    uri VARCHAR(200),
-    yop VARCHAR(4),
-    access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read'),
-    metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
-        'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
-        'No_License'),
-    period DATE,
-    period_total INT,
-    INDEX (title_report_id),
-    INDEX (platform),
-    INDEX (publisher),
-    INDEX (period),
-    PRIMARY KEY (id)
 );
