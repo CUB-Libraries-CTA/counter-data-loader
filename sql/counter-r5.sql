@@ -7,8 +7,7 @@ CREATE TABLE platform_ref (
     name VARCHAR(100) NOT NULL,
     preferred_name VARCHAR(100) NOT NULL,
     has_faq TINYINT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id),
-    INDEX (preferred_name)
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE title_report (
@@ -28,11 +27,8 @@ CREATE TABLE title_report (
     create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX (title_type),
-    INDEX (platform_id),
-    INDEX (title_type, id),
-    INDEX (title(10), publisher(10), platform_id, isbn, yop),
-    FOREIGN KEY (platform_id) REFERENCES platform_ref (id)
+    INDEX idx_dupe_check (title(50), publisher(50), platform_id, isbn, yop),
+    FOREIGN KEY fk_platform_id (platform_id) REFERENCES platform_ref (id)
 );
 
 CREATE TABLE title_report_temp (
@@ -53,13 +49,13 @@ CREATE TABLE title_report_temp (
     row_num INT,
     title_report_id INT,
     PRIMARY KEY (id),
-    INDEX (title(10), publisher(10), proprietary_id, isbn, yop),
-    INDEX (excel_name, row_num)
+    UNIQUE INDEX idx_excel_name_row_num (excel_name, row_num)
 );
 
 CREATE TABLE metric (
     id INT AUTO_INCREMENT,
     title_report_id INT NOT NULL,
+    title_type CHAR(1) NOT NULL,
     access_type ENUM('Controlled','OA_Gold','Other_Free_To_Read') NOT NULL,
     metric_type ENUM('Total_Item_Investigations','Total_Item_Requests','Unique_Item_Investigations',
         'Unique_Item_Requests','Unique_Title_Investigations','Unique_Title_Requests','Limit_Exceeded',
@@ -69,15 +65,14 @@ CREATE TABLE metric (
     create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX (title_report_id),
-    INDEX (title_report_id, period),
-    INDEX (title_report_id, access_type, metric_type, period),
-    FOREIGN KEY (title_report_id) REFERENCES title_report (id)
+    UNIQUE INDEX idx_dupe_check (title_report_id, access_type, metric_type, period),
+    FOREIGN KEY fk_title_report_id (title_report_id) REFERENCES title_report (id)
 );
 
 CREATE TABLE metric_temp (
     id INT AUTO_INCREMENT,
     title_report_id INT,
+    title_type CHAR(1),
     access_type INT,
     metric_type INT,
     period DATE,
@@ -111,5 +106,5 @@ CREATE TABLE report_inventory (
     load_end DATETIME NOT NULL,
     load_date DATE NOT NULL,
     PRIMARY KEY (id),
-    INDEX (platform, begin_date, end_date)
+    UNIQUE INDEX idx_platform_begin_end (platform, begin_date, end_date, row_cnt)
 );

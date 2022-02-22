@@ -26,6 +26,7 @@ class JR1Report:
         self._run_date = self._worksheet.cell(row=7, column=1).value
         self._platform = self._worksheet.cell(row=10, column=3).value
         self._filename = os.path.basename(workbook)
+        self._dirname = os.path.dirname(workbook)
     
     @property
     def filename(self):
@@ -81,6 +82,8 @@ class JR1Report:
         Note that the first two columns are not part of the report
         specification. They are included for later referencing
         when data is loaded into the database.
+
+        DEPRECATED when using bulk import method.
         """
 
         # Start with non-date columns, which are static, and then
@@ -101,7 +104,8 @@ class JR1Report:
         Returns the number of rows containing publication data.
 
         According to the COUNTER Code of Practice R4, publication data always
-        starts at row 10 in the spreadsheet.
+        starts at row 10 in the spreadsheet. Assuming a continuous list of
+        data rows, the last row will be followed by a blank row.
         """
 
         n = 0
@@ -120,6 +124,8 @@ class JR1Report:
         For a JR1 report covering twelve months of usage data (typically Jan-Dec),
         there will be 22 columns of data in the row. Reports containing less (or more)
         months of usage data will have less or more list items, respectively.
+
+        DEPRECATED when using bulk import method.
         """
 
         row = self._worksheet[n]
@@ -151,17 +157,26 @@ class JR1Report:
 
         return row_spec._make(datarow)
     
-    def export(self, dir):
+    def export(self):
         """
-        Makes text files of the raw spreadsheet data for bulk import into the DB.
+        Prepares text files of the raw spreadsheet data for bulk import into the DB. Two separate
+        files are generated (titles and metrics):
+
+        - title_report_temp
+        - metric_temp
+        
+        Both files are Excel tab delimited format, which are subsequently loaded with mysqlimport.
         """
-        # Start with titles
-        with open('{0}/title_report_temp'.format(dir), 'w', newline='', encoding='utf-8') as csvfile:
+        
+        # Start with titles data.
+        title_report_temp = '{0}/title_report_temp'.format(self._dirname)
+        with open(title_report_temp, 'w', newline='', encoding='utf-8') as csvfile:
             csvwriter = csv.writer(csvfile, dialect='excel-tab', lineterminator='\n')
         
-            # Iterate through the spreadsheet rows starting at the first data row (row 10).
-            datarows = self.data_rows()
-            row_num = min(datarows)
+            # Iterate through the spreadsheet rows starting at the first data row (row 10). Only the
+            # first 7 columns are included in the export for titles data.
+            datarows = self.data_rows() # Range of rows in the spreadsheet.
+            row_num = min(datarows) # Spreadsheet row number.
             for row in self._worksheet.iter_rows(min_row=min(datarows), min_col=1, max_row=max(datarows), max_col=7):
                 # Start building a list of field values. The actual fields and their sequence
                 # must correspond to the title_report_temp table. See schema for details.
@@ -180,28 +195,30 @@ class JR1Report:
                         datarow.append('') # yop
                         break
                     if row[i].value is None:
-                        datarow.append('')
+                        datarow.append('') # cell is blank
                     else:
                         datarow.append(str(row[i].value).strip())
                     i += 1
-                datarow.append(self.filename) # excel_name
+                datarow.append(self._filename) # excel_name
                 datarow.append(row_num) # row_num
                 datarow.append(0) # title_report_id
                 csvwriter.writerow(datarow)
                 row_num += 1
 
-        # Export metrics
-        with open('{0}/metric_temp'.format(dir), 'w', newline='', encoding='utf-8') as csvfile:
+        # Export metrics.
+        metric_temp = '{0}/metric_temp'.format(self._dirname)
+        with open(metric_temp, 'w', newline='', encoding='utf-8') as csvfile:
             csvwriter = csv.writer(csvfile, dialect='excel-tab', lineterminator='\n')
 
+            # Grab the report begin and end dates, which are needed to generate the report periods.
             report_begin = datetime.fromisoformat(self.begin_date)
             report_end = datetime.fromisoformat(self.end_date)
 
-            # Iterate through the spreadsheet rows starting at the first data row (row 10).
+            # Iterate through the spreadsheet rows starting at the first data row (row 10). For metrics,
+            # the first applicable report column is 11 and extends to the number of months in the report.
             datarows = self.data_rows()
             row_num = min(datarows)
             for row in self._worksheet.iter_rows(min_row=min(datarows), min_col=11, max_row=max(datarows), max_col=report_end.month+10):
-
                 # A row will be inserted for each month column in the source
                 # spreadsheet. The actual number of months is determined from
                 # the start and end dates contained in the report header.
@@ -215,11 +232,12 @@ class JR1Report:
                     datarow = list()
                     datarow.append('null') # id
                     datarow.append(0) # title_report_id
+                    datarow.append(self.title_type) # title_type
                     datarow.append(1) # access_type --> defaults to Controlled
                     datarow.append(2) # metric_type --> defaults to Total_Item_Requests
                     datarow.append(period)
                     datarow.append(period_total)
-                    datarow.append(self.filename)
+                    datarow.append(self._filename)
                     datarow.append(row_num)
                     csvwriter.writerow(datarow)
                     n += 1

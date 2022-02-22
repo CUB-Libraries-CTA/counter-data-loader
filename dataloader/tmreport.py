@@ -33,6 +33,7 @@ class TitleMasterReport:
         self._run_date = self._worksheet.cell(row=11, column=2).value
         self._platform = self._worksheet.cell(row=15, column=4).value
         self._filename = os.path.basename(workbook)
+        self._dirname = os.path.dirname(workbook)
 
     @property
     def filename(self):
@@ -92,6 +93,8 @@ class TitleMasterReport:
         run for any period, e.g., April to July. Therefore, the begin and
         end dates for the reporting period will determine which month columns
         to include in the header.
+
+        DEPRECATED when using bulk import method.
         """
 
         # Build the title/book info columns by iterating through the spreadsheet
@@ -144,6 +147,8 @@ class TitleMasterReport:
 
         The return value is a named tuple, which provides for more
         intuitive referencing of columns during inserts and updates.
+
+        DEPRECATED when using bulk import method.
         """
 
         row = self._worksheet[n]
@@ -174,17 +179,18 @@ class TitleMasterReport:
 
         return row_spec._make(datarow)
 
-    def export(self, dir):
+    def export(self):
         """
         Makes text files of the raw spreadsheet data for bulk import into the DB.
         """
-        # Start with titles
-        with open('{0}/title_report_temp'.format(dir), 'w', newline='', encoding='utf-8') as csvfile:
+        # Start with titles data.
+        title_report_temp = '{0}/title_report_temp'.format(self._dirname)
+        with open(title_report_temp, 'w', newline='', encoding='utf-8') as csvfile:
             csvwriter = csv.writer(csvfile, dialect='excel-tab', lineterminator='\n')
         
             # Iterate through the spreadsheet rows starting at the first data row (row 10).
-            datarows = self.data_rows()
-            row_num = min(datarows)
+            datarows = self.data_rows() # Range of rows in the spreadsheet.
+            row_num = min(datarows) # Spreadsheet row number.
             for row in self._worksheet.iter_rows(min_row=min(datarows), min_col=1, max_row=max(datarows), max_col=11):
                 # Start building a list of field values. The actual fields and their sequence
                 # must correspond to the title_report_temp table. See schema for details.
@@ -204,15 +210,16 @@ class TitleMasterReport:
                     else:
                         datarow.append(str(row[i].value).strip())
                     i += 1
-                datarow.append(self.filename) # excel_name
+                datarow.append(self._filename) # excel_name
                 datarow.append(row_num) # row_num
                 datarow.append(0) # title_report_id
                 csvwriter.writerow(datarow)
                 row_num += 1
 
 
-        # Export metrics
-        with open('{0}/metric_temp'.format(dir), 'w', newline='', encoding='utf-8') as csvfile:
+        # Export metrics.
+        metric_temp = '{0}/metric_temp'.format(self._dirname)
+        with open(metric_temp, 'w', newline='', encoding='utf-8') as csvfile:
             csvwriter = csv.writer(csvfile, dialect='excel-tab', lineterminator='\n')
 
             report_begin = datetime.fromisoformat(self.begin_date)
@@ -233,14 +240,15 @@ class TitleMasterReport:
                 for i in range(report_begin.month, report_end.month + 1):
                     period = datetime(report_begin.year, i, 1).strftime('%Y-%m-%d')
                     period_total = int(float(row[n].value)) # float conversion deals with cases of '0.0'
-                    access_type = self.ACCESS_TYPE[str(row[0].value.strip())]
-                    metric_type = self.METRIC_TYPE[str(row[1].value.strip())]
+                    access_type = self.ACCESS_TYPE[str(row[0].value).strip()]
+                    metric_type = self.METRIC_TYPE[str(row[1].value).strip()]
 
                     # Start building a list of field values. The actual fields and their sequence
                     # must correspond to the title_report_temp table. See schema for details.
                     datarow = list()
                     datarow.append('null') # id
                     datarow.append(0) # title_report_id
+                    datarow.append(self.title_type) # title_type
                     datarow.append(access_type) # access_type
                     datarow.append(metric_type) # metric_type
                     datarow.append(period)

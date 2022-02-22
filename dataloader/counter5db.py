@@ -24,18 +24,30 @@ class CounterDb:
     conn = mysql.connector.connect(**dataloader.config.dbargs, buffered=True)
 
 class BulkImport(CounterDb):
-
-    def __init__(self, dir):
-        self._dir = dir
+    """
+    Performs a bulk import of title and metric text files.
+    """
+    def __init__(self, reportdir):
+        self._reportdir = reportdir
 
     def import_all(self):
+        # Truncate database temp tables first.
         cursor = CounterDb.conn.cursor()
         cursor.execute('TRUNCATE TABLE title_report_temp')
         cursor.execute('TRUNCATE TABLE metric_temp')
+
+        # Build the mysqlimport command line and then execute.
         cmd = 'mysqlimport --delete counter5 {0}/title_report_temp \
-            {0}/metric_temp > mysqlimport_out.txt'.format(self._dir)
+            {0}/metric_temp > mysqlimport_out.txt'.format(self._reportdir)
         try:
-            os.system(cmd)
+            if os.system(cmd) != 0:
+                raise OSError # Consider using a custom exception class for this purpose.
+            os.remove('mysqlimport_out.txt')
+            
+            # The following code uses the subprocess module to run the same command
+            # but with more options to control execution. The above approach though is
+            # wholly acceptable and is simpler.
+
             #sp = subprocess.run(args=[
             #    "mysqlimport",
             #    "--delete",
@@ -46,7 +58,8 @@ class BulkImport(CounterDb):
             #    shell=True,
             #    check=True)
             #sp.check_returncode()
-        except subprocess.CalledProcessError as err:
+
+        except OSError:
             print('There was a problem importing records')
 
 class TitleReportTable(CounterDb):
@@ -65,6 +78,8 @@ class TitleReportTable(CounterDb):
           - title
           - publisher
           - platform
+          - isbn
+          - yop
 
         Note that there may be instances where a book or journal title
         may appear to be unique but in fact is not. For example, the
@@ -113,7 +128,7 @@ class TitleReportTable(CounterDb):
         Inserts a row in the title_report table. Returns the id
         of the inserted row.
 
-        DEPRECATED
+        DEPRECATED when using bulk import method.
         """
         # If the title/publisher/platform combination already exists in this
         # table, then we only need the rowid to insert metric data.
@@ -157,15 +172,18 @@ class TitleReportTable(CounterDb):
         return rowid
 
     def insert_from_temp(self):
+        """
+        Inserts rows from title temp table into the title_report table.
+        """
         # For every row in the title_report_temp table, either do an insert
         # or, if a duplicate row, update the title_report_id reference
         # in the temp table. Regardless of insert or update, the title_report_id
-        # will need to be updated
+        # will need to be updated.
         cursor = CounterDb.conn.cursor(named_tuple=True)
         cursor.execute('SELECT * FROM title_report_temp')
         rows = cursor.fetchall()
         for row in rows:
-            # Check for duplicate
+            # Check for duplicate.
             dupe = self._is_duplicate(row)
             if dupe:
                 rowid = dupe.id
@@ -234,7 +252,7 @@ class MetricTable(CounterDb):
         Inserts a row in the metric table. The row to insert must
         have a corresponding title entry (journal or book).
 
-        DEPRECATED
+        DEPRECATED when using bulk import method.
         """
         # Build date and period information needed for each row
         report_begin = datetime.fromisoformat(begin_date)
@@ -254,7 +272,6 @@ class MetricTable(CounterDb):
                 access_type = 'Not Defined'
 
             # Is this an update or an insert?
-            
             dupe = self._is_duplicate(rowid, access_type, row.metric_type, period)
             if dupe:
                 sql = u"UPDATE metric SET \
@@ -278,6 +295,9 @@ class MetricTable(CounterDb):
             CounterDb.conn.commit()
 
     def insert_from_temp(self):
+        """
+        Inserts data from the metric temp table in the main metric table.
+        """
         # First step is to update the title_report_id in the temp table.
         # Basic algorithm:
         # - for every row in the temp table, update the title_report_id
@@ -305,11 +325,12 @@ class MetricTable(CounterDb):
                 sql = u"INSERT INTO metric SET \
                     id = NULL, \
                     title_report_id = %s, \
+                    title_type = %s, \
                     access_type = %s, \
                     metric_type = %s, \
                     period = %s, \
                     period_total = %s"
-                params = (row.title_report_id, row.access_type, row.metric_type,
+                params = (row.title_report_id, row.title_type, row.access_type, row.metric_type,
                     row.period, row.period_total)
 
             # Do the insert and return.
