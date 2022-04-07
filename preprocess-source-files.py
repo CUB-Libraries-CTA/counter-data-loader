@@ -1,4 +1,4 @@
-import os, glob
+import os, glob, sys, shutil
 import openpyxl
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
@@ -52,20 +52,22 @@ class CounterReport:
 
 if __name__ == "__main__":
 
-    os.chdir('reports')
+    os.chdir(sys.argv[1])
+    os.mkdir('tmp')
     files = glob.glob('*.*')
     for f in files:
+        sourcefile = f
         try:
             source = CounterReport(f)
             report = source.report()
             report_year = report.begin_date[0:4]
             report_range = report.begin_date[5:7] + report.end_date[5:7]
-            name = '{0}-{1}-{2}-{3}.xlsx'.format(
+            targetfile = 'tmp/{0}-{1}-{2}-{3}.xlsx'.format(
                 source.version,
                 report.platform.lower().replace(' ', '-').replace(':',''),
                 report_year,
                 report_range)
-            os.rename(f, name)
+            shutil.copy2(sourcefile, targetfile)
         except Exception as e:
             logfile = open('errors.log', 'at')
             logfile.write('{0} | {1}\n'.format(f, e))
