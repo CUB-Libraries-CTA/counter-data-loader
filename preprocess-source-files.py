@@ -1,4 +1,4 @@
-import os, glob, sys, shutil
+import os, glob, sys
 import openpyxl
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
@@ -20,9 +20,8 @@ from dataloader.tmreport import TitleMasterReport
 #
 # jr1-acm-digital-library-2015-0112.xlsx
 #
-# Once all the files have been renamed, they can be uploaded to the staging server
-# for loading into the database. If any errors occur, the offending file will be
-# logged in an error log.
+# Once all the files have been renamed, they can be processed. If any errors
+# occur, the offending file will be logged in an error log.
 
 class CounterReport:
     """
@@ -53,7 +52,6 @@ class CounterReport:
 if __name__ == "__main__":
 
     os.chdir(sys.argv[1])
-    os.mkdir('tmp')
     files = glob.glob('*.*')
     for f in files:
         sourcefile = f
@@ -62,12 +60,12 @@ if __name__ == "__main__":
             report = source.report()
             report_year = report.begin_date[0:4]
             report_range = report.begin_date[5:7] + report.end_date[5:7]
-            targetfile = 'tmp/{0}-{1}-{2}-{3}.xlsx'.format(
+            targetfile = '{0}-{1}-{2}-{3}.xlsx'.format(
                 source.version,
                 report.platform.lower().replace(' ', '-').replace(':',''),
                 report_year,
                 report_range)
-            shutil.copy2(sourcefile, targetfile)
+            os.rename(sourcefile, targetfile)
         except Exception as e:
             logfile = open('errors.log', 'at')
             logfile.write('{0} | {1}\n'.format(f, e))
