@@ -1,5 +1,5 @@
--- Index statements for all tables
---
+-- Create index statements for all tables
+
 -- platform_ref table
 CREATE INDEX idx_preferred_name ON platform_ref (preferred_name);
 
