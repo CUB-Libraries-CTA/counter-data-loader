@@ -6,3 +6,6 @@ dataloader/config.py
 *.log
 *.pyc
 *.sh
+
+# IDE-related files
+.idea
