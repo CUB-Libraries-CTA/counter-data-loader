@@ -1,0 +1,13 @@
+name: counter-data-loader
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  - openpyxl>=3.0.9
+  - mysql-connector-python>=8.0.27
+  - boto3>=1.19.7
+  - botocore>=1.22.7
+
+
+
+
