@@ -25,8 +25,20 @@ To enable email notification behavior, you can either edit the CKAN configuratio
     # Activate the python environment
     . ./counter-python-env/bin/activate
     
+    # Install the dependencies needed for counter-data-loader project.
+    # NOTE: make sure the "activate" command has been run and you're in the counter-python-env environment.    
+    pip install -r counter-data-loader/requirements.txt
     
-    
-    
-    
+    # To exit the python environment, simply type:
+    deactivate    
 ```
+**NOTE: All python commands related to counter-data-loader must be run from within the python environment.**
+
+To uninstall or re-install the environment:
+
+* First deactivate the environment:  `deactivate`
+* Then delete the folder "counter-python-env":  `rm -rf counter-python-env`
+* Then follow the instructions above to recreate the environment.
+
+
+
