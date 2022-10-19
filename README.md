@@ -9,9 +9,13 @@ Loads COUNTER database from JR1 report spreadsheets
 
 ## Python Environment Installation
 
-To enable email notification behavior, you can either edit the CKAN configuration file after installation is finished, or include your UCAR email credentials by modifying these lines in the install script "install_dash.sh":
+These instructions use the "pip" python package manager.   
+
+Unlike the "conda" package manager, the desired python, pip, and setuptools versions must be pre-installed on the local machine.
+
+Using "pip" should be fine, as long as all projects on the local machine can use the same version of python, pip, and setuptools.
 ```
-    # Install python virtual environment manager
+    # Install python virtual environment manager, if it doesn't already exist
     pip install virtualenv
     
     # Change directory to the parent folder for the cloned counter-data-loader repo.
