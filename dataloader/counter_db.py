@@ -37,8 +37,12 @@ class BulkImport(CounterDb):
         cursor.execute('TRUNCATE TABLE metric_temp')
 
         # Build the mysqlimport command line and then execute.
-        cmd = 'mysqlimport --delete counter5 {0}/title_report_temp \
-            {0}/metric_temp > mysqlimport_out.txt'.format(self._reportdir)
+        user = dataloader.config.dbargs['user']
+        passwd = dataloader.config.dbargs['password']
+        database = dataloader.config.dbargs['database']
+        cmd = 'mysqlimport --user={0} --password={1} --delete {2} {3}/title_report_temp \
+             {3}/metric_temp > mysqlimport_out.txt'.format(user, passwd, database, self._reportdir)
+        print(cmd)
         try:
             if os.system(cmd) != 0:
                 raise OSError # Consider using a custom exception class for this purpose.
