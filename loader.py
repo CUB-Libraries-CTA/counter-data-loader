@@ -1,9 +1,17 @@
+import glob
+import os
+import sys
+import traceback
 from datetime import datetime
+
+# For PyCharm Debugging
+import pydevd_pycharm
+
+from dataloader.counter_db import BulkImport, TitleReportTable, MetricTable, ReportInventoryTable
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
-from dataloader.counter5db import BulkImport, TitleReportTable, MetricTable, ReportInventoryTable
-import sys, os, glob
-import traceback
+
+pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 # Running this script requires two arguments representing the directory
 # containing the Excel COUNTER reports and the year to process.
