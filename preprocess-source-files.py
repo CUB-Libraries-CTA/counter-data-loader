@@ -3,6 +3,10 @@ import openpyxl
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
 
+# For PyCharm Debugging
+import pydevd_pycharm
+pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
+
 # The purpose of this script is to do a bulk renaming of COUNTER Excel
 # files prior to loading. Applying a consistent naming convention serves
 # a number of purposes including sorting and listing of files, and embedding
@@ -52,7 +56,7 @@ class CounterReport:
 if __name__ == "__main__":
 
     os.chdir(sys.argv[1])
-    files = glob.glob('*.*')
+    files = glob.glob('*.xlsx')
     for f in files:
         sourcefile = f
         try:
@@ -60,12 +64,20 @@ if __name__ == "__main__":
             report = source.report()
             report_year = report.begin_date[0:4]
             report_range = report.begin_date[5:7] + report.end_date[5:7]
-            targetfile = '{0}-{1}-{2}-{3}.xlsx'.format(
-                source.version,
-                report.platform.lower().replace(' ', '-').replace(':',''),
-                report_year,
-                report_range)
-            os.rename(sourcefile, targetfile)
+            if report.has_valid_rows():
+                targetfile = '{0}-{1}-{2}-{3}.xlsx'.format(
+                    source.version,
+                    report.platform.lower().replace(' ', '-').replace(':',''),
+                    report_year,
+                    report_range)
+                os.rename(sourcefile, targetfile)
+            else:
+                error_msg = '{0}:  is missing part of (Title, Publisher, Platform) on these rows: [ '.format(f)
+                invalid_rows = report.get_invalid_rows()
+                for row in invalid_rows:
+                    error_msg += ' {0}'.format(row)
+                error_msg += ' ]\n\n'
+                raise Exception(error_msg)
         except Exception as e:
             logfile = open('errors.log', 'at')
             logfile.write('{0} | {1}\n'.format(f, e))

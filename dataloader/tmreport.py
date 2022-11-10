@@ -1,4 +1,6 @@
 import openpyxl
+import pandas as pd
+
 import collections
 import os, csv
 from datetime import datetime
@@ -34,6 +36,23 @@ class TitleMasterReport:
         self._platform = self._worksheet.cell(row=15, column=4).value
         self._filename = os.path.basename(workbook)
         self._dirname = os.path.dirname(workbook)
+
+        data = pd.read_excel(workbook, skiprows=13, header=0)
+        required_data = data[['Title', 'Publisher', 'Platform']]
+        invalid_rows = [index for index, row in required_data.iterrows() if row.isnull().any()]
+        self._invalid_rows = invalid_rows
+
+
+    def has_valid_rows(self):
+        valid = False
+        if not self._invalid_rows:
+            valid = True
+        return valid
+
+    def get_invalid_rows(self):
+        row_offset = self.HEADER_ROW + 1
+        invalid_rows = [index + row_offset for index in self._invalid_rows]
+        return invalid_rows
 
     @property
     def filename(self):
