@@ -11,6 +11,10 @@ class JR1Report:
     The layout and data requirements are very specific. The properties and methods
     defined in this class rely on adherence to this specification otherwise data
     anomalies may arise and/or code using this class may raise an exception.
+
+    NOTE: JR1 reports are no longer used with the COUNTER R5 specification, which the CU
+    Libraries started using exclusively in 2021.   So JR1 reports no longer need to be
+    supported.
     """
 
     PERIODS = ['', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug',

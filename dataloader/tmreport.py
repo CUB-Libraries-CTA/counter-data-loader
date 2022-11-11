@@ -37,22 +37,22 @@ class TitleMasterReport:
         self._filename = os.path.basename(workbook)
         self._dirname = os.path.dirname(workbook)
 
-        data = pd.read_excel(workbook, skiprows=13, header=0)
-        required_data = data[['Title', 'Publisher', 'Platform']]
-        invalid_rows = [index for index, row in required_data.iterrows() if row.isnull().any()]
+        required_columns = ['Title', 'Publisher', 'Platform']
+        skiprows = self.HEADER_ROW - 1
+        data = pd.read_excel(workbook, skiprows=skiprows, header=0, usecols=required_columns)
+
+        data['row_index'] = data.index + (self.HEADER_ROW + 1)
+        invalid_data = data[data.isna().any(axis=1)]
+        invalid_rows = invalid_data['row_index'].values
         self._invalid_rows = invalid_rows
 
 
-    def has_valid_rows(self):
-        valid = False
-        if not self._invalid_rows:
-            valid = True
-        return valid
+    def has_all_valid_rows(self):
+        is_valid = len(self._invalid_rows) == 0
+        return is_valid
 
     def get_invalid_rows(self):
-        row_offset = self.HEADER_ROW + 1
-        invalid_rows = [index + row_offset for index in self._invalid_rows]
-        return invalid_rows
+        return self._invalid_rows
 
     @property
     def filename(self):

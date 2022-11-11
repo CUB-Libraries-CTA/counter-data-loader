@@ -56,7 +56,7 @@ class CounterReport:
 if __name__ == "__main__":
 
     os.chdir(sys.argv[1])
-    files = glob.glob('*.xlsx')
+    files = glob.glob('*.xl*')
     for f in files:
         sourcefile = f
         try:
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             report = source.report()
             report_year = report.begin_date[0:4]
             report_range = report.begin_date[5:7] + report.end_date[5:7]
-            if report.has_valid_rows():
+            if report.has_all_valid_rows():
                 targetfile = '{0}-{1}-{2}-{3}.xlsx'.format(
                     source.version,
                     report.platform.lower().replace(' ', '-').replace(':',''),
@@ -72,7 +72,7 @@ if __name__ == "__main__":
                     report_range)
                 os.rename(sourcefile, targetfile)
             else:
-                error_msg = '{0}:  is missing part of (Title, Publisher, Platform) on these rows: [ '.format(f)
+                error_msg = '{0}:  is missing part of (Title, Publisher, Platform) on these rows: ['.format(f)
                 invalid_rows = report.get_invalid_rows()
                 for row in invalid_rows:
                     error_msg += ' {0}'.format(row)
