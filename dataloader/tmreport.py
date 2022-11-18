@@ -160,43 +160,46 @@ class TitleMasterReport:
 
         return range(self.DATA_COL_START, self.DATA_COL_START + n)
 
-    def get_row(self, n):
-        """
-        Gets a data row from the spreadsheet for a given row number.
-
-        The return value is a named tuple, which provides for more
-        intuitive referencing of columns during inserts and updates.
-
-        DEPRECATED when using bulk import method.
-        """
-
-        row = self._worksheet[n]
-        row_spec = collections.namedtuple('ReportRow', self._header_row())
-
-        # Initialize the data row
-        datarow = list()
-        datarow.append(self.report_id)
-        datarow.append(self.title_type)
-
-        # Append the remaining column data
-        i = 0
-        while i < len(row):
-            if i == 6 and self.title_type == 'J':
-                datarow.append('') # isbn
-            if i == 9 and self.title_type == 'J':
-                datarow.append('') # yop
-            if i == 9 and self.report_id == 'TR_J1':
-                datarow.append('Controlled') # access_type
-            if row[i].value is None:
-                datarow.append('')
-            else:
-                datarow.append(str(row[i].value).strip())
-            i += 1
-
-        # Remove the total columns that are not used
-        datarow = datarow[0:15] + datarow[16:]
-
-        return row_spec._make(datarow)
+    # def get_row(self, n):
+    #     """
+    #     Gets a data row from the spreadsheet for a given row number.
+    #
+    #     The return value is a named tuple, which provides for more
+    #     intuitive referencing of columns during inserts and updates.
+    #
+    #     DEPRECATED when using bulk import method.
+    #     """
+    #
+    #     row = self._worksheet[n]
+    #     row_spec = collections.namedtuple('ReportRow', self._header_row())
+    #
+    #     # Initialize the data row
+    #     datarow = list()
+    #     datarow.append(self.report_id)
+    #     datarow.append(self.title_type)
+    #
+    #     # Append the remaining column data
+    #     i = 0
+    #     while i < len(row):
+    #         if i == 6 and self.title_type == 'J':
+    #             datarow.append('') # isbn
+    #         if i == 9 and self.title_type == 'J':
+    #             datarow.append('') # yop
+    #         if i == 9 and self.report_id == 'TR_J1':
+    #             datarow.append('Controlled') # access_type
+    #         if row[i].value is None:
+    #             datarow.append('')
+    #         else:
+    #             # Replace newline characters, as they will break any CSV-based mysqlimport command.
+    #             value = str(row[i].value)
+    #             value = value.replace('\n', ' ').strip()
+    #             datarow.append(value)
+    #         i += 1
+    #
+    #     # Remove the total columns that are not used
+    #     datarow = datarow[0:15] + datarow[16:]
+    #
+    #     return row_spec._make(datarow)
 
     def export(self):
         """
@@ -227,7 +230,10 @@ class TitleMasterReport:
                     if row[i].value is None:
                         datarow.append('')
                     else:
-                        datarow.append(str(row[i].value).strip())
+                        # Replace newline characters, as they will break any CSV-based mysqlimport command.
+                        value = str(row[i].value)
+                        value = value.replace('\n', ' ').strip()
+                        datarow.append(value)
                     i += 1
                 datarow.append(self._filename) # excel_name
                 datarow.append(row_num) # row_num
