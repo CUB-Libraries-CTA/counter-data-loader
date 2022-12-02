@@ -2,10 +2,11 @@ import os, glob, sys
 import openpyxl
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
+from dataloader.counter_db import PlatformTable
 
 # For PyCharm Debugging
 import pydevd_pycharm
-pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
+#pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 # The purpose of this script is to do a bulk renaming of COUNTER Excel
 # files prior to loading. Applying a consistent naming convention serves
@@ -38,6 +39,7 @@ class CounterReport:
         self._version = None
         self._report = None
         if self._a1.startswith('Journal Report 1'):
+            raise Exception("JR1Report is no longer supported with version 5 of Counter specification.")
             self._report = JR1Report(file)
             self._version = 'jr1'
         elif self._a1 == 'Report_Name':
@@ -56,26 +58,42 @@ class CounterReport:
 if __name__ == "__main__":
 
     os.chdir(sys.argv[1])
-    files = glob.glob('*.xl*')
+    files = glob.glob('TR*.xl*')
+    files.sort()
+    num_files = len(files)
+    num_files_processed = 0
+    platform_table = PlatformTable()
+    platform_names = platform_table.get_platform_names()
     for f in files:
+        num_files_processed += 1
+        print(" ({0} of {1}): ".format(num_files_processed, num_files), end='')
         sourcefile = f
         try:
             source = CounterReport(f)
             report = source.report()
+            report.print_stats()
             report_year = report.begin_date[0:4]
             report_range = report.begin_date[5:7] + report.end_date[5:7]
-            if report.has_all_valid_rows():
+            if report.has_all_valid_rows() and report.has_valid_platforms(platform_names):
                 targetfile = '{0}-{1}-{2}-{3}.xlsx'.format(
                     source.version,
                     report.platform.lower().replace(' ', '-').replace(':',''),
                     report_year,
                     report_range)
                 os.rename(sourcefile, targetfile)
-            else:
-                error_msg = '{0}:  is missing part of (Title, Publisher, Platform) on these rows: ['.format(f)
+            elif not report.has_all_valid_rows():
+                error_msg = '{0}:  is missing one of (Title, Publisher, Platform) on these rows: ['.format(f)
                 invalid_rows = report.get_invalid_rows()
                 for row in invalid_rows:
                     error_msg += ' {0}'.format(row)
+                error_msg += ' ]\n\n'
+                raise Exception(error_msg)
+            else:
+                invalid_platforms = report.get_invalid_platforms(platform_names)
+                assert(len(invalid_platforms) > 0)
+                error_msg = '{0}:  has these platforms not present in the platform_ref table: ['.format(f)
+                for platform in invalid_platforms:
+                    error_msg += ' "{0}"'.format(platform)
                 error_msg += ' ]\n\n'
                 raise Exception(error_msg)
         except Exception as e:
