@@ -6,6 +6,7 @@ import subprocess, os, sys
 import datetime
 from datetime import datetime
 
+
 class CounterDb:
     """
     The parent class for the COUNTER database. It provides a common
@@ -362,6 +363,19 @@ class PlatformTable(CounterDb):
         row = cursor.fetchone()
 
         return row[0]
+
+    def get_platform_names(self):
+        """
+        Returns the names defined in the platform_ref table.
+        Used to determine if a report contains an undefined platform name.
+        """
+        sql = "SELECT name from platform_ref"
+        cursor = CounterDb.conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        names = [tuple[0] for tuple in rows]
+        return names
+
 
 class ReportInventoryTable(CounterDb):
     """

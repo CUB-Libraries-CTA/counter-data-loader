@@ -37,15 +37,35 @@ class TitleMasterReport:
         self._filename = os.path.basename(workbook)
         self._dirname = os.path.dirname(workbook)
 
+        # Perform checks on important report values.
         required_columns = ['Title', 'Publisher', 'Platform']
         skiprows = self.HEADER_ROW - 1
         data = pd.read_excel(workbook, skiprows=skiprows, header=0, usecols=required_columns)
+        self._num_rows = data.shape[0]
 
+        # Track the platform names used in the report, because they must be pre-registered
+        # in the platform_ref table to be considered valid.
+        self._platform_names = data['Platform'].unique()
+
+        # Check for rows missing key values and record row numbers
         data['row_index'] = data.index + (self.HEADER_ROW + 1)
         invalid_data = data[data.isna().any(axis=1)]
         invalid_rows = invalid_data['row_index'].values
         self._invalid_rows = invalid_rows
 
+    def has_valid_platforms(self, platform_names):
+        is_valid = True
+        for name in self._platform_names:
+            if name not in platform_names:
+                is_valid = False
+        return is_valid
+
+    def get_invalid_platforms(self, platform_names):
+        invalid_names = []
+        for name in self._platform_names:
+            if name not in platform_names:
+                invalid_names.append(name)
+        return invalid_names
 
     def has_all_valid_rows(self):
         is_valid = len(self._invalid_rows) == 0
@@ -129,6 +149,15 @@ class TitleMasterReport:
 
         return header
 
+    def num_rows(self):
+        """
+        Returns the number of rows loaded into the pandas data frame.
+        Much faster than looping over non-blank rows in the original spreadsheet.
+        """
+        num_rows = self._num_rows
+        #assert(num_rows == len(self.data_rows()))
+        return num_rows
+
     def data_rows(self):
         """
         Returns the range of data rows. For all report types, this is rows
@@ -200,6 +229,16 @@ class TitleMasterReport:
     #     datarow = datarow[0:15] + datarow[16:]
     #
     #     return row_spec._make(datarow)
+
+    def print_stats(self):
+        """
+        Report worthwhile statistics for the report
+        """
+        # datetime object containing current date and time
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+        print("{0:<30}:  found {1:>6} rows.    {2}\n".format(self._filename, self._num_rows, dt_string))
+
 
     def export(self):
         """

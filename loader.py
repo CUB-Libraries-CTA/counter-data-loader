@@ -11,7 +11,7 @@ from dataloader.counter_db import BulkImport, TitleReportTable, MetricTable, Rep
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
 
-pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
+#pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 # Running this script requires two arguments representing the directory
 # containing the Excel COUNTER reports and the year to process.
