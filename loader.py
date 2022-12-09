@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime
 
 # For PyCharm Debugging
-import pydevd_pycharm
+#import pydevd_pycharm
 
 from dataloader.counter_db import BulkImport, TitleReportTable, MetricTable, ReportInventoryTable
 from dataloader.jr1report import JR1Report
