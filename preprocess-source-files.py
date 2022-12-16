@@ -66,8 +66,9 @@ if __name__ == "__main__":
     platform_names = platform_table.get_platform_names()
     for f in files:
         num_files_processed += 1
-        print(" ({0} of {1}): ".format(num_files_processed, num_files), end='')
         sourcefile = f
+        filename = os.path.basename(f)
+        print(" ({0} of {1}): {2:<50}: ".format(num_files_processed, num_files, filename), end='')
         try:
             source = CounterReport(f)
             report = source.report()
@@ -81,6 +82,7 @@ if __name__ == "__main__":
                     report_year,
                     report_range)
                 os.rename(sourcefile, targetfile)
+                print('\n')
             elif not report.has_all_valid_rows():
                 error_msg = '{0}:  is missing one of (Title, Publisher, Platform) on these rows: ['.format(f)
                 invalid_rows = report.get_invalid_rows()
@@ -97,6 +99,7 @@ if __name__ == "__main__":
                 error_msg += ' ]\n\n'
                 raise Exception(error_msg)
         except Exception as e:
+            print("  ERROR: failed to preprocess (see errors.log)\n")
             logfile = open('errors.log', 'at')
             logfile.write('{0} | {1}\n'.format(f, e))
             logfile.close()
