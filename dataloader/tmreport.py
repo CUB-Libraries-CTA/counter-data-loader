@@ -237,7 +237,7 @@ class TitleMasterReport:
         # datetime object containing current date and time
         now = datetime.now()
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-        print("{0:<30}:  found {1:>6} rows.    {2}\n".format(self._filename, self._num_rows, dt_string))
+        print(" found {0:>6} rows ({1}).".format(self._num_rows, dt_string), end='')
 
 
     def export(self):
