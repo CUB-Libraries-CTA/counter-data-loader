@@ -106,7 +106,7 @@ if __name__ == "__main__":
                 os.rename(sourcefile, targetfile)
                 print('\n')
             elif not report.has_all_valid_rows():
-                error_msg = '{0}:  is missing one of (Title, Publisher, Platform) on these rows: ['.format(f)
+                error_msg = '{0}:  is missing one of (Title, Platform, Access_Type, Metric_Type) on these rows: ['.format(f)
                 invalid_rows = report.get_invalid_rows()
                 for row in invalid_rows:
                     error_msg += ' {0}'.format(row)
