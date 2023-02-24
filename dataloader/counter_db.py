@@ -6,6 +6,7 @@ import subprocess, os, sys
 import datetime
 from datetime import datetime
 
+
 class CounterDb:
     """
     The parent class for the COUNTER database. It provides a common
@@ -37,8 +38,12 @@ class BulkImport(CounterDb):
         cursor.execute('TRUNCATE TABLE metric_temp')
 
         # Build the mysqlimport command line and then execute.
-        cmd = 'mysqlimport --delete counter5 {0}/title_report_temp \
-            {0}/metric_temp > mysqlimport_out.txt'.format(self._reportdir)
+        user = dataloader.config.dbargs['user']
+        passwd = dataloader.config.dbargs['password']
+        database = dataloader.config.dbargs['database']
+        cmd = 'mysqlimport --user={0} --password={1} --delete {2} {3}/title_report_temp \
+             {3}/metric_temp > mysqlimport_out.txt'.format(user, passwd, database, self._reportdir)
+        print(cmd)
         try:
             if os.system(cmd) != 0:
                 raise OSError # Consider using a custom exception class for this purpose.
@@ -358,6 +363,19 @@ class PlatformTable(CounterDb):
         row = cursor.fetchone()
 
         return row[0]
+
+    def get_platform_names(self):
+        """
+        Returns the names defined in the platform_ref table.
+        Used to determine if a report contains an undefined platform name.
+        """
+        sql = "SELECT name from platform_ref"
+        cursor = CounterDb.conn.cursor()
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        names = [tuple[0] for tuple in rows]
+        return names
+
 
 class ReportInventoryTable(CounterDb):
     """
