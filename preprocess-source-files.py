@@ -1,12 +1,14 @@
 import os, glob, sys
 import openpyxl
+import datetime
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
 from dataloader.counter_db import PlatformTable
 
+
 # For PyCharm Debugging
-#import pydevd_pycharm
-#pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
+# import pydevd_pycharm
+# pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 # The purpose of this script is to do a bulk renaming of COUNTER Excel
 # files prior to loading. Applying a consistent naming convention serves
@@ -28,10 +30,26 @@ from dataloader.counter_db import PlatformTable
 # Once all the files have been renamed, they can be processed. If any errors
 # occur, the offending file will be logged in an error log.
 
+def log_message(error_message):
+    """Write message to log file with locale-specific timestamp
+    """
+    logfile = open('errors.log', 'at')
+    logfile.write(error_message + '\n')
+    logfile.close()
+
+
+def get_timestamp():
+    """ Return current time as a formatted string
+    """
+    timestamp = datetime.datetime.now().strftime('%c')
+    return timestamp
+
+
 class CounterReport:
     """
     Represents a COUNTER report in Excel format.
     """
+
     def __init__(self, file):
         self._workbook = openpyxl.load_workbook(filename=file, data_only=True)
         self._worksheet = self._workbook.active
@@ -47,13 +65,14 @@ class CounterReport:
             self._version = self._report.report_id.lower().replace('_', '-')
         else:
             raise Exception
-    
+
     def report(self):
         return self._report
-    
+
     @property
     def version(self):
         return self._version
+
 
 if __name__ == "__main__":
 
@@ -64,6 +83,9 @@ if __name__ == "__main__":
     num_files_processed = 0
     platform_table = PlatformTable()
     platform_names = platform_table.get_platform_names()
+
+    log_message("\n\n")
+    log_message("   ### Started preprocessing at:  " + get_timestamp() + "\n")
     for f in files:
         num_files_processed += 1
         sourcefile = f
@@ -78,13 +100,13 @@ if __name__ == "__main__":
             if report.has_all_valid_rows() and report.has_valid_platforms(platform_names):
                 targetfile = '{0}-{1}-{2}-{3}.xlsx'.format(
                     source.version,
-                    report.platform.lower().replace(' ', '-').replace(':',''),
+                    report.platform.lower().replace(' ', '-').replace(':', ''),
                     report_year,
                     report_range)
                 os.rename(sourcefile, targetfile)
                 print('\n')
             elif not report.has_all_valid_rows():
-                error_msg = '{0}:  is missing one of (Title, Publisher, Platform) on these rows: ['.format(f)
+                error_msg = '{0}:  is missing one of (Title, Platform, Access_Type, Metric_Type) on these rows: ['.format(f)
                 invalid_rows = report.get_invalid_rows()
                 for row in invalid_rows:
                     error_msg += ' {0}'.format(row)
@@ -92,7 +114,7 @@ if __name__ == "__main__":
                 raise Exception(error_msg)
             else:
                 invalid_platforms = report.get_invalid_platforms(platform_names)
-                assert(len(invalid_platforms) > 0)
+                assert (len(invalid_platforms) > 0)
                 error_msg = '{0}:  has these platforms not present in the platform_ref table: ['.format(f)
                 for platform in invalid_platforms:
                     error_msg += ' "{0}"'.format(platform)
@@ -100,6 +122,7 @@ if __name__ == "__main__":
                 raise Exception(error_msg)
         except Exception as e:
             print("  ERROR: failed to preprocess (see errors.log)\n")
-            logfile = open('errors.log', 'at')
-            logfile.write('{0} | {1}\n'.format(f, e))
-            logfile.close()
+            err_message = '{0} | {1}\n'.format(f, e)
+            log_message(err_message)
+
+    log_message("   ### Finished preprocessing at:  " + get_timestamp() + "\n")

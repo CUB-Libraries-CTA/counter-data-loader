@@ -38,7 +38,7 @@ class TitleMasterReport:
         self._dirname = os.path.dirname(workbook)
 
         # Perform checks on important report values.
-        required_columns = ['Title', 'Publisher', 'Platform']
+        required_columns = ['Title', 'Platform', 'Access_Type', 'Metric_Type']
         skiprows = self.HEADER_ROW - 1
         data = pd.read_excel(workbook, skiprows=skiprows, header=0, usecols=required_columns)
         self._num_rows = data.shape[0]
