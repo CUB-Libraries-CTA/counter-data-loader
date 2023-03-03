@@ -299,7 +299,7 @@ class TitleMasterReport:
             report_end = datetime.fromisoformat(self.end_date)
 
             # Iterate through the spreadsheet rows starting at the first data row (row 15).
-            # Period columns either start at J(10) for journals or L(12) for books.
+            # Period columns either start at J(10) for journals or L(12) for books for B3/J3 reports.
             if j1_or_b1:
                 min_col = {'J': 9, 'B': 11}
             else:
@@ -315,7 +315,14 @@ class TitleMasterReport:
                 n = 3
                 for i in range(report_begin.month, report_end.month + 1):
                     period = datetime(report_begin.year, i, 1).strftime('%Y-%m-%d')
-                    period_total = int(float(row[n].value)) # float conversion deals with cases of '0.0'
+
+                    # If monthly total is missing, treat it as "zero"
+                    if not row[n].value:
+                        month_total = 0
+                    else:
+                        month_total = int(float(row[n].value)) # float conversion deals with cases of '0.0'
+
+                    # Access Type column is missing in J1/B1 reports and is assumed to always be "Controlled"
                     if j1_or_b1:
                         access_type = 'Controlled'
                     else:
@@ -331,7 +338,7 @@ class TitleMasterReport:
                     datarow.append(access_type) # access_type
                     datarow.append(metric_type) # metric_type
                     datarow.append(period)
-                    datarow.append(period_total)
+                    datarow.append(month_total)
                     datarow.append(self.filename)
                     datarow.append(row_num)
                     csvwriter.writerow(datarow)
