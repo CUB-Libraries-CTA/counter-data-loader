@@ -38,7 +38,11 @@ class TitleMasterReport:
         self._dirname = os.path.dirname(workbook)
 
         # Perform checks on important report values.
-        required_columns = ['Title', 'Platform', 'Access_Type', 'Metric_Type']
+        if self._report_id in ['TR_J3', 'TR_B3']:
+            required_columns = ['Title', 'Platform', 'Access_Type', 'Metric_Type']
+        else:
+            assert self._report_id in ['TR_J1', 'TR_B1']
+            required_columns = ['Title', 'Platform', 'Metric_Type']
         skiprows = self.HEADER_ROW - 1
         data = pd.read_excel(workbook, skiprows=skiprows, header=0, usecols=required_columns)
         self._num_rows = data.shape[0]
@@ -266,6 +270,7 @@ class TitleMasterReport:
                     if i == 9 and self.title_type == 'J':
                         datarow.append('') # yop
                         break
+
                     if row[i].value is None:
                         datarow.append('')
                     else:
@@ -282,6 +287,10 @@ class TitleMasterReport:
 
 
         # Export metrics.
+
+        # The J1 and B1 reports have no "Access Type" column, so different column logic is needed
+        j1_or_b1 = self.report_id in ['TR_J1', 'TR_B1']
+
         metric_temp = '{0}/metric_temp'.format(self._dirname)
         with open(metric_temp, 'w', newline='', encoding='utf-8') as csvfile:
             csvwriter = csv.writer(csvfile, dialect='excel-tab', lineterminator='\n')
@@ -291,7 +300,10 @@ class TitleMasterReport:
 
             # Iterate through the spreadsheet rows starting at the first data row (row 15).
             # Period columns either start at J(10) for journals or L(12) for books.
-            min_col = {'J': 10, 'B': 12}
+            if j1_or_b1:
+                min_col = {'J': 9, 'B': 11}
+            else:
+                min_col = {'J': 10, 'B': 12}
             datarows = self.data_rows()
             row_num = min(datarows)
             for row in self._worksheet.iter_rows(min_row=min(datarows), min_col=min_col[self.title_type],
@@ -304,7 +316,10 @@ class TitleMasterReport:
                 for i in range(report_begin.month, report_end.month + 1):
                     period = datetime(report_begin.year, i, 1).strftime('%Y-%m-%d')
                     period_total = int(float(row[n].value)) # float conversion deals with cases of '0.0'
-                    access_type = self.ACCESS_TYPE[str(row[0].value).strip()]
+                    if j1_or_b1:
+                        access_type = 'Controlled'
+                    else:
+                        access_type = self.ACCESS_TYPE[str(row[0].value).strip()]
                     metric_type = self.METRIC_TYPE[str(row[1].value).strip()]
 
                     # Start building a list of field values. The actual fields and their sequence
