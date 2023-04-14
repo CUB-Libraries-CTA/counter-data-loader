@@ -6,12 +6,12 @@ from datetime import datetime
 
 # For PyCharm Debugging
 #import pydevd_pycharm
+#pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 from dataloader.counter_db import BulkImport, TitleReportTable, MetricTable, ReportInventoryTable
 from dataloader.jr1report import JR1Report
 from dataloader.tmreport import TitleMasterReport
 
-#pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 # Running this script requires two arguments representing the directory
 # containing the Excel COUNTER reports and the year to process.
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         # next report.
         reportdir = sys.argv[1]
         reportyr = sys.argv[2]
-        files = glob.glob('{0}/*{1}*.xlsx'.format(reportdir, reportyr))
+        files = glob.glob('{0}/tr*{1}*.xlsx'.format(reportdir, reportyr))
         files.sort()
 
         trt = TitleReportTable()
