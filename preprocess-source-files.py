@@ -7,8 +7,8 @@ from dataloader.counter_db import PlatformTable
 
 
 # For PyCharm Debugging
-# import pydevd_pycharm
-# pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
+#import pydevd_pycharm
+#pydevd_pycharm.settrace('localhost', port=6666, stdoutToServer=True, stderrToServer=True, suspend=False)
 
 # The purpose of this script is to do a bulk renaming of COUNTER Excel
 # files prior to loading. Applying a consistent naming convention serves
